@@ -1,32 +1,3 @@
-// ==================== CONFIGURATION ====================
-const CONFIG = {
-  // Move this to a separate config file in production
-  SCRIPT_URL: "YOUR_SCRIPT_URL_HERE", // Don't commit the real URL
-  
-  IMAGE: {
-    MAX_WIDTH: 1024,
-    COMPRESSION_QUALITY: 0.7,
-    MAX_SIZE_MB: 5
-  },
-  
-  API: {
-    TIMEOUT_MS: 30000,
-    MAX_RETRIES: 3,
-    RETRY_DELAY_MS: 1000
-  },
-  
-  HISTORY: {
-    MAX_DATE_RANGE_DAYS: 31,
-    DEFAULT_RANGE_DAYS: 7
-  },
-  
-  TOAST: {
-    MAX_QUEUE: 5,
-    DEFAULT_DURATION: 3000,
-    ERROR_DURATION: 5000
-  }
-};
-
 // ==================== STATE MANAGEMENT ====================
 const AppState = {
   loadedRows: [],
@@ -803,7 +774,7 @@ window.onload = function() {
   // Initialize Google Sign-In
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.initialize({
-      client_id: "648943267004-cgsr4bhegtmma2jmlsekjtt494j8cl7f.apps.googleusercontent.com",
+      client_id: "client_id: CONFIG.GOOGLE_CLIENT_ID,",
       callback: (response) => Auth.handleGoogleLogin(response),
       auto_select: false,
       cancel_on_tap_outside: true
