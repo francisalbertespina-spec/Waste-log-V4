@@ -774,7 +774,7 @@ window.onload = function() {
   // Initialize Google Sign-In
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.initialize({
-      client_id: "CONFIG.GOOGLE_CLIENT_ID,",
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
       callback: (response) => Auth.handleGoogleLogin(response),
       auto_select: false,
       cancel_on_tap_outside: true
