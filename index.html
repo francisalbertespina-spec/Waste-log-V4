@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hazardous Waste Log HDJV</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link href="style.css" rel="stylesheet" type="text/css"> 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+  
+<body>
+  <div class="app-container">
+    <div class="header">
+      <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+      <h1>Hazardous Waste Log</h1>
+      <p>HDJV Environmental Management</p>
+    </div>
+
+    <div class="content">
+      <!-- Login Section -->
+      <div id="login-section" class="section active">
+        <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Welcome</h2>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+          Please sign in with your authorized Google account to continue
+        </p>
+        
+
+      <div id="loginWrapper">
+          <div id="buttonDiv" style="display:flex; justify-content:center;"></div>
+        
+          <div id="loginLoadingUI" class="login-loading-ui">
+            <div class="login-spinner"></div>
+            <p>Signing you in…</p>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- Package Selection -->
+      <div id="package-section" class="section">
+        <h2 style="margin-bottom: 10px; color: #333;">Select Package</h2>
+        <p style="color: #666; margin-bottom: 20px;">Choose the package you want to work with</p>
+        
+        <div class="package-grid">
+          <div class="package-card" onclick="selectPackage('P4', this)">
+            <div class="icon">📦</div>
+            <div class="name">Package 4</div>
+          </div>
+          <div class="package-card" onclick="selectPackage('P5', this)">
+            <div class="icon">📦</div>
+            <div class="name">Package 5</div>
+          </div>
+          <div class="package-card" onclick="selectPackage('P6', this)">
+            <div class="icon">📦</div>
+            <div class="name">Package 6</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="confirmPackage()">
+          Continue
+        </button>
+      </div>
+
+      <!-- Menu Section -->
+      <div id="menu-section" class="section">
+        <button class="back-btn" onclick="backToPackage()">
+          ← Back to Packages
+        </button>
+
+        <h2 style="margin-bottom: 20px; color: #333;">What would you like to do?</h2>
+        
+        <div class="menu-grid">
+          <div class="menu-btn" onclick="showLogForm()">
+            <div class="icon">✏️</div>
+            <div class="text">
+              <h3>Log New Entry</h3>
+              <p>Record new waste disposal</p>
+            </div>
+          </div>
+
+          <div class="menu-btn" onclick="showHistoryView()">
+            <div class="icon">📊</div>
+            <div class="text">
+              <h3>View Records</h3>
+              <p>Browse past entries</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Section -->
+      <div id="form-section" class="section">
+        <button class="back-btn" onclick="showMenu()">
+          ← Back to Menu
+        </button>
+
+        <h2 style="margin-bottom: 20px; color: #333;">New Entry</h2>
+
+        <div class="form-group" id="date-group">
+          <label>Date</label>
+          <input type="date" id="date">
+          <div class="error-msg">Please select a date</div>
+        </div>
+
+        <div class="form-group" id="volume-group">
+          <label>Volume (kg)</label>
+          <input type="number" step="0.00001" id="volume" placeholder="0.00000">
+          <div class="error-msg">Please enter a volume</div>
+        </div>
+
+        <div class="form-group" id="waste-group">
+          <label>Waste Name</label>
+          <select id="waste">
+            <option value="">-- Select Waste Type --</option>
+            <option value="Used Oil">Used Oil</option>
+            <option value="Pathological and Infectious Waste">Pathological and Infectious Waste</option>
+            <option value="Lead Compounds">Lead Compounds</option>
+            <option value="Oil Contaminated Materials">Oil Contaminated Materials</option>
+            <option value="Grease Waste">Grease Waste</option>
+            <option value="Waste Electrical and Electronic Equipment">Waste Electrical and Electronic Equipment</option>
+            <option value="Mercury and Mercury Compounds">Mercury and Mercury Compounds</option>
+            <option value="Containers Previously containing toxic chemical substances">Containers Previously containing toxic chemical substances</option>
+          </select>
+          <div class="error-msg">Please select a waste type</div>
+        </div>
+
+        <div class="form-group" id="photo-group">
+          <label>Photo Proof</label>
+          <div class="photo-upload" onclick="document.getElementById('photo').click()">
+            <input type="file" id="photo" accept="image/*" capture="environment" onchange="previewImage(event)">
+            <div class="placeholder">
+              <div class="icon">📷</div>
+              <p><strong>Tap to capture photo</strong></p>
+              <p style="font-size: 0.85rem; color: #999; margin-top: 5px;">Required for verification</p>
+            </div>
+          </div>
+          <div class="error-msg">Please upload a photo</div>
+        </div>
+
+        <div class="btn-group">
+          <button id="submitBtn" class="btn btn-primary" onclick="addEntry()">
+            Submit Entry
+          </button>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div id="history-section" class="section">
+        <button class="back-btn" onclick="showMenu()">
+          ← Back to Menu
+        </button>
+
+        <h2 style="margin-bottom: 20px; color: #333;">View Records</h2>
+
+        <div class="date-range">
+          <div class="form-group">
+            <label>From</label>
+            <input type="date" id="fromDate">
+          </div>
+          <div class="form-group">
+            <label>To</label>
+            <input type="date" id="toDate">
+          </div>
+        </div>
+
+        <div class="history-actions">
+          <button class="btn btn-primary" onclick="loadHistory()">
+            Load Entries
+          </button>
+        
+          <button id="exportBtn" class="btn btn-secondary" onclick="exportExcel()">
+            Export to Excel (XLSX)
+          </button>
+        </div>
+
+        <div id="loading" style="display:none;">
+          <div class="spinner"></div>
+          <p style="text-align: center; color: #666;">Loading data...</p>
+        </div>
+
+        <div class="table-wrapper" id="table-container" style="display:none;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>kg</th>
+                <th>Waste</th>
+                <th>User</th>
+                <th>Photo</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="icon">📋</div>
+          <p><strong>No records to display</strong></p>
+          <p style="font-size: 0.9rem;">Select a date range and click "Load Entries"</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Created by <strong>E. Francis Albert</strong>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3>Entry Submitted!</h3>
+      <p>Your waste entry has been successfully logged to the cloud.</p>
+      <button class="btn btn-primary" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
+   <!-- Image Preview Modal -->
+  <div id="imageModal" class="image-modal" onclick="closeImageModal()">
+    <img id="modalImage" alt="Preview" onclick="event.stopPropagation()">
+  </div>
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
