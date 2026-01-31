@@ -1,6 +1,0 @@
-config.js
-script-config.js
-.env
-node_modules/
-*.log
-.DS_Store
