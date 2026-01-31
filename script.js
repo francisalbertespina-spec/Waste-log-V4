@@ -10,23 +10,9 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycby_xEM6AoFpFPUBc3jZlJCD4dywit-JqLLmOKS6psgH--Qbqc3nT0BVCs5QoRfmpgFQ/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbzwcjvQ65qLDEUozdibtmqNyducGTmJUtz9dmLCI2EtYWBaVn3N4h4F-jd3RzpxkpnhCg/exec";
 // const scriptURL = "https://script.google.com/macros/s/AKfycbyzlxISJwaO6O_pWauC9dYT7TPz3NKs6i3h9imFMntB5uTVdf31reibQAzFaLJoS9eJ/exec";
 
-
-// Waste-Log-Auth-V3
-// Working script = Deployement V3-rev1
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwpSUI8zSMeNiDLoLdqNRWmJuOw3HIRR2Txev_YXnX782TW6zcL0yXeJglCiJ9qLmA/exec";
-
-
-// Waste-Log-Auth-V2
-// working script = Deployment HWTR-1
-// const scriptURL = "https://script.google.com/macros/s/AKfycbylJMo7GXUndNLUjxvCfUu1pQ0UpQH0OL9MeG71a0zyVFZ0wQ41RGoYKVhC8HFdhJZQBQ/exec";
-
-
-// Waste-Log-Auth-V1
-// working script = Deployment 1-26-2026-rev6
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwyAIPb1OXyEWjau0-3OM4_e5FWLr-wuBHTx0otEzPABLomL5FRi4BsPs39bF1VfClA/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
