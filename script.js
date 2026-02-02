@@ -10,9 +10,7 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycby4F6ZCE7xQ-9pIcSHMr0WBPhG9qRmdbFZ-7NXsn8g1JMQP7OjTxtE-cn2qPMegdlL-/exec";
-// const scriptURL = "https://script.google.com/macros/s/AKfycbyzlxISJwaO6O_pWauC9dYT7TPz3NKs6i3h9imFMntB5uTVdf31reibQAzFaLJoS9eJ/exec";
-
+const scriptURL = "https://script.google.com/macros/s/AKfycbwX69rSoAy9i1bKy9HmJrgFyyvGSy8h0TFgITgb2Hq9VdFrqsQWhlRBDMZZpOEEZrfY/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
