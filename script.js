@@ -7,6 +7,7 @@ let activeToast = null;
 let toastTimer = null;
 window.isUploading = false;
 
+
 const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxMN4txNU7LHTdVLRI-EqbAaj-cihydLSrCees7NLJCKk60APcrDYw_T0V358BSRXJN/exec";
