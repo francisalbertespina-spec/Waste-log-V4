@@ -185,7 +185,7 @@ function renderUsers(users) {
       <td>${u.status}</td>
       <td>${u.role || "user"}</td>
       <td>
-        ${u.status === "pending" ? `
+        ${u.status === "Pending" ? `
           <button onclick="approveUser('${u.email}')">Approve</button>
           <button onclick="rejectUser('${u.email}')">Reject</button>
         ` : "-"}
@@ -198,32 +198,17 @@ function renderUsers(users) {
 async function approveUser(email) {
   if (!confirm("Approve this user?")) return;
 
-  await fetch(scriptURL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "approveUser",
-      email: email,
-      token: localStorage.getItem("userToken")
-    })
-  });
-
+  await fetch(`${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
   loadUsers();
 }
 
 async function rejectUser(email) {
   if (!confirm("Reject this user?")) return;
 
-  await fetch(scriptURL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "rejectUser",
-      email: email,
-      token: localStorage.getItem("userToken")
-    })
-  });
-
+  await fetch(`${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
   loadUsers();
 }
+
 
 async function loadRequests() {
   const res = await fetch(`${scriptURL}?action=getRequests&token=${localStorage.getItem("userToken")}`);
