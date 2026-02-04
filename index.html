@@ -28,12 +28,14 @@
           Please sign in with your authorized Google account to continue
         </p>
 
-       <!-- ADMIN LOGIN -->
+     <!-- ADMIN LOGIN -->
           <div id="admin-section" class="section" style="display:none;">
+            <button class="btn btn-secondary" onclick="showUserLogin()">← Back</button>
+          
             <h2>Admin Login</h2>
           
             <div class="form-group">
-              <input id="adminEmail" placeholder="Admin Email">
+              <input id="adminEmail" type="email" placeholder="Admin Email">
             </div>
           
             <div class="form-group">
@@ -46,13 +48,12 @@
           
             <hr>
           
+            <!-- ADMIN PANEL -->
             <div id="adminPanel" style="display:none;">
               <h3>Pending Users</h3>
               <div id="admin-user-list"></div>
             </div>
           </div>
-
-
 
 
       <div id="loginWrapper">
@@ -258,6 +259,7 @@
 
 </body>
 </html>
+
 
 
 
