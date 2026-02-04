@@ -594,11 +594,19 @@ async function handleCredentialResponse(response) {
 
     setLoginLoading(false); // stop spinner
 
-    if (data.status === "Approved") {
-      localStorage.setItem("userToken", data.token);
-      showSection("package-section");
-      showToast(`Welcome, ${responsePayload.name}!`, "success");
-    } 
+  if (data.status === "Approved") {
+  localStorage.setItem("userToken", data.token);
+  localStorage.setItem("userRole", data.role || "user"); // 👈 NEW
+
+  showSection("package-section");
+  showToast(`Welcome, ${responsePayload.name}!`, "success");
+
+  // 👇 show admin UI if admin
+  if (data.role === "admin") {
+    enableAdminUI();
+      }
+  }
+
     else if (data.status === "Rejected") {
       showToast("Access denied by admin", "error");
     } 
@@ -688,6 +696,10 @@ function closeImageModal() {
   modal.style.display = "none";
 }
 
+function enableAdminUI() {
+  document.body.classList.add("is-admin");
+  console.log("Admin mode enabled");
+}
 
 
 
