@@ -141,6 +141,155 @@ body {
   to { opacity: 1; }
 }
 
+/* Role Selection */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.role-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border: 3px solid transparent;
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.role-card:hover::before {
+  opacity: 1;
+}
+
+.role-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  border-color: #d32f2f;
+}
+
+.role-card.admin-card {
+  background: linear-gradient(135deg, #fff9e6 0%, #ffe8b3 100%);
+}
+
+.role-card.admin-card:hover {
+  border-color: #ffd700;
+}
+
+.role-card .icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  filter: grayscale(0.3);
+  transition: all 0.4s;
+}
+
+.role-card:hover .icon {
+  filter: grayscale(0);
+  transform: scale(1.1);
+}
+
+.role-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.role-desc {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Admin Dashboard */
+.admin-dashboard-header {
+  text-align: center;
+  margin-bottom: 35px;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffe8b3 100%);
+  border-radius: 16px;
+  border: 2px solid #ffd700;
+}
+
+.admin-dashboard-header h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard-header p {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.admin-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin: 25px 0;
+}
+
+.admin-menu-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 30px 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: center;
+}
+
+.admin-menu-card:hover {
+  border-color: #d32f2f;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(211, 47, 47, 0.2);
+}
+
+.admin-menu-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.admin-menu-card h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.admin-menu-card p {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.admin-menu-card .arrow {
+  font-size: 1.5rem;
+  color: #ccc;
+  transition: all 0.3s ease;
+}
+
+.admin-menu-card:hover .arrow {
+  color: #d32f2f;
+  transform: translateX(5px);
+}
+
 /* Package Cards */
 .package-grid {
   display: grid;
