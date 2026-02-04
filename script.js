@@ -132,7 +132,14 @@ function backToPackage() {
   selectedPackage = "";
   document.querySelectorAll('.package-card')
     .forEach(c => c.classList.remove('selected'));
-  showSection("package-section");
+  
+  // Check if user is admin - send them to role selection instead
+  const userRole = localStorage.getItem("userRole");
+  if (userRole === "admin") {
+    showSection("role-section");
+  } else {
+    showSection("package-section");
+  }
 }
 
 function showMenu() {
@@ -153,6 +160,34 @@ function showHistoryView() {
 }
 
 /* ================= ADMIN FUNCTIONS ================= */
+
+// Role selection functions
+function selectUserMode() {
+  showSection("package-section");
+}
+
+function selectAdminMode() {
+  showSection("admin-dashboard");
+}
+
+function backToRoleSelection() {
+  showSection("role-section");
+}
+
+function backToAdminDashboard() {
+  showSection("admin-dashboard");
+}
+
+// Admin dashboard navigation
+function showUserManagement() {
+  showSection("user-management-section");
+  loadUsers();
+}
+
+function showRequestLogs() {
+  showSection("request-logs-section");
+  loadRequests();
+}
 
 function showAdmin() {
   showSection("admin-section");
@@ -629,12 +664,14 @@ async function handleCredentialResponse(response) {
       // Display user info in header
       displayUserInfo(name, data.role || "user");
 
-      showSection("package-section");
       showToast(`Welcome, ${name}!`, "success");
 
-      // Enable admin UI if admin
+      // Show role selection for admins, package selection for users
       if (data.role === "admin") {
         enableAdminUI();
+        showSection("role-section");
+      } else {
+        showSection("package-section");
       }
     } else if (data.status === "Rejected") {
       showToast("Access denied by admin", "error");
