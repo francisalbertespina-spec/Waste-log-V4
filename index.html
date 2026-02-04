@@ -20,6 +20,16 @@
           <span id="user-name"></span>
           <span id="user-role-badge" class="role-badge"></span>
         </div>
+        
+        <!-- Admin Mode Toggle (visible only to admins) -->
+        <div id="mode-toggle" class="mode-toggle admin-only" style="display: none;">
+          <span class="mode-label" id="mode-label-user">User</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="admin-mode-toggle" onchange="toggleAdminMode()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="mode-label" id="mode-label-admin">Admin</span>
+        </div>
       </div>
     </div>
 
@@ -41,30 +51,6 @@
         </div>
       </div>
       
-      <!-- Role Selection (Admin Only) -->
-      <div id="role-section" class="section admin-only">
-        <h2 style="margin-bottom: 10px; color: #333;">Choose Your Mode</h2>
-        <p style="color: #666; margin-bottom: 30px;">Would you like to access the system as a user or administrator?</p>
-        
-        <div class="role-grid">
-          <div class="role-card" onclick="selectUserMode()">
-            <div class="icon">👤</div>
-            <div class="role-title">User Panel</div>
-            <div class="role-desc">Log waste entries and view records</div>
-          </div>
-          
-          <div class="role-card admin-card" onclick="selectAdminMode()">
-            <div class="icon">🛡️</div>
-            <div class="role-title">Admin Panel</div>
-            <div class="role-desc">Manage users and system settings</div>
-          </div>
-        </div>
-        
-        <button class="btn btn-secondary" onclick="logout()" style="margin-top: 20px;">
-          Sign Out
-        </button>
-      </div>
-
       <!-- Package Selection -->
       <div id="package-section" class="section">
         <h2 style="margin-bottom: 10px; color: #333;">Select Package</h2>
@@ -262,8 +248,6 @@
       
       <!-- Admin Dashboard -->
       <div id="admin-dashboard" class="section admin-only">
-        <button class="back-btn" onclick="backToRoleSelection()">← Back to Mode Selection</button>
-        
         <div class="admin-dashboard-header">
           <h2>🛡️ Admin Dashboard</h2>
           <p>Manage users and monitor system activity</p>
@@ -291,8 +275,6 @@
         <button class="back-btn" onclick="backToAdminDashboard()">← Back to Admin Dashboard</button>
         
         <div class="breadcrumb">
-          <span class="breadcrumb-item" onclick="backToRoleSelection()">Mode Selection</span>
-          <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-item" onclick="backToAdminDashboard()">Admin Dashboard</span>
           <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-item active">User Management</span>
@@ -329,8 +311,6 @@
         <button class="back-btn" onclick="backToAdminDashboard()">← Back to Admin Dashboard</button>
         
         <div class="breadcrumb">
-          <span class="breadcrumb-item" onclick="backToRoleSelection()">Mode Selection</span>
-          <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-item" onclick="backToAdminDashboard()">Admin Dashboard</span>
           <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-item active">Request Logs</span>
