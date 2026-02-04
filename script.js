@@ -248,28 +248,39 @@ function closeModal() {
 
 async function loadHistory() {
   const from = fromDate.value;
-  const to = toDate.value;
+  let to = toDate.value;
+
+  // ✅ Make TO date inclusive (add 1 day)
+  const toObj = new Date(to);
+  toObj.setDate(toObj.getDate() + 1);
+  to = toObj.toISOString().split("T")[0];
+
   const url = `${scriptURL}?package=${selectedPackage}&from=${from}&to=${to}`;
 
   const loading = document.getElementById("loading");
   const tableContainer = document.getElementById("table-container");
+  const emptyState = document.getElementById("empty-state");
   const tbody = document.getElementById("table-body");
 
-  // Reset UI
+  // UI reset
   tableContainer.style.display = "none";
+  emptyState.style.display = "none";   // ✅ HIDE EMPTY MESSAGE
   tbody.innerHTML = "";
 
-  // ✅ SHOW SPINNER FIRST
+  // ✅ SHOW SPINNER
   loading.style.display = "block";
 
   try {
     const res = await fetch(url);
     const rows = await res.json();
 
-    // ✅ HIDE SPINNER AFTER FETCH
     loading.style.display = "none";
-
     loadedRows = rows;
+
+    if (!rows || rows.length <= 1) {
+      emptyState.style.display = "block";
+      return;
+    }
 
     rows.slice(1).forEach(r => {
       const tr = document.createElement("tr");
@@ -288,7 +299,7 @@ async function loadHistory() {
   } catch (err) {
     console.error(err);
     loading.style.display = "none";
-    alert("Failed to load records");
+    emptyState.style.display = "block";
   }
 }
 
