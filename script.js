@@ -174,7 +174,7 @@ function backToAdminDashboard() {
 }
 
 function showAdmin() {
-  showSection("admin-section");
+  showSection("admin-dashboard");
   loadUsers();
   loadRequests();
 }
