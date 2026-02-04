@@ -62,41 +62,44 @@
         </button>
       </div>
 
-      <!-- Menu Section -->
-      <div id="menu-section" class="section">
-        <button class="back-btn" onclick="backToPackage()">
-          ← Back to Packages
-        </button>
-
-        <h2 style="margin-bottom: 20px; color: #333;">What would you like to do?</h2>
-        
-        <div class="menu-grid">
-          <div class="menu-btn" onclick="showLogForm()">
-            <div class="icon">✏️</div>
-            <div class="text">
-              <h3>Log New Entry</h3>
-              <p>Record new waste disposal</p>
+      <<!-- Menu Section -->
+          <div id="menu-section" class="section">
+            <button class="back-btn" onclick="backToPackage()">
+              ← Back to Packages
+            </button>
+          
+            <h2 style="margin-bottom: 20px; color: #333;">What would you like to do?</h2>
+          
+            <div class="menu-grid">
+          
+              <div class="menu-btn admin-only" onclick="showAdmin()">
+                <div class="icon">🛠️</div>
+                <div class="text">
+                  <h3>Admin Panel</h3>
+                  <p>Approve users & view logs</p>
+                </div>
+              </div>
+          
+              <div class="menu-btn" onclick="showLogForm()">
+                <div class="icon">✏️</div>
+                <div class="text">
+                  <h3>Log New Entry</h3>
+                  <p>Record new waste disposal</p>
+                </div>
+              </div>
+          
+              <div class="menu-btn" onclick="showHistoryView()">
+                <div class="icon">📊</div>
+                <div class="text">
+                  <h3>View Records</h3>
+                  <p>Browse past entries</p>
+                </div>
+              </div>
+          
             </div>
           </div>
 
-          <div class="menu-btn" onclick="showHistoryView()">
-            <div class="icon">📊</div>
-            <div class="text">
-              <h3>View Records</h3>
-              <p>Browse past entries</p>
-            </div>
-          </div>
-
-          <!-- ✅ ADMIN BUTTON INSIDE MENU GRID -->
-          <div class="menu-btn admin-only" onclick="showAdmin()">
-            <div class="icon">🛠️</div>
-            <div class="text">
-              <h3>Admin Panel</h3>
-              <p>Approve users & view logs</p>
-            </div>
-          </div>
-        </div>
-      </div>
+       
 
       <!-- Form Section -->
       <div id="form-section" class="section">
@@ -284,5 +287,6 @@
 
 </body>
 </html>
+
 
 
