@@ -247,57 +247,40 @@ function closeModal() {
 /* ================= HISTORY ================= */
 
 async function loadHistory() {
-  const fromDate = document.getElementById("fromDate").value;
-  const toDate = document.getElementById("toDate").value;
+  const from = fromDate.value;
+  const to = toDate.value;
+  const url = `${scriptURL}?package=${selectedPackage}&from=${from}&to=${to}`;
 
   const loading = document.getElementById("loading");
   const tableContainer = document.getElementById("table-container");
-  const emptyState = document.getElementById("empty-state");
-  const tableBody = document.getElementById("table-body");
+  const tbody = document.getElementById("table-body");
 
-  // UI RESET
+  // Reset UI
   tableContainer.style.display = "none";
-  emptyState.style.display = "none";
-  tableBody.innerHTML = "";
+  tbody.innerHTML = "";
 
   // ✅ SHOW SPINNER FIRST
   loading.style.display = "block";
 
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getHistory",
-        package: selectedPackage,
-        fromDate,
-        toDate
-      })
-    });
+    const res = await fetch(url);
+    const rows = await res.json();
 
-    const data = await res.json();
-
-    // HIDE SPINNER AFTER DATA ARRIVES
+    // ✅ HIDE SPINNER AFTER FETCH
     loading.style.display = "none";
 
-    if (!data || !data.records || data.records.length === 0) {
-      emptyState.style.display = "block";
-      return;
-    }
+    loadedRows = rows;
 
-    data.records.forEach(row => {
+    rows.slice(1).forEach(r => {
       const tr = document.createElement("tr");
-
       tr.innerHTML = `
-        <td>${row.date}</td>
-        <td>${row.volume}</td>
-        <td>${row.waste}</td>
-        <td>${row.user}</td>
-        <td>
-          <img src="${row.photo}" style="width:60px;cursor:pointer" onclick="openImageModal('${row.photo}')">
-        </td>
+        <td>${new Date(r[0]).toLocaleDateString()}</td>
+        <td>${r[1]}</td>
+        <td>${r[2]}</td>
+        <td>${r[4]}</td>
+        <td><a onclick="openImageModal('${r[5]}')">View</a></td>
       `;
-
-      tableBody.appendChild(tr);
+      tbody.appendChild(tr);
     });
 
     tableContainer.style.display = "block";
@@ -305,9 +288,10 @@ async function loadHistory() {
   } catch (err) {
     console.error(err);
     loading.style.display = "none";
-    alert("Failed to load records.");
+    alert("Failed to load records");
   }
 }
+
 
 
 /* ================= ADMIN ================= */
