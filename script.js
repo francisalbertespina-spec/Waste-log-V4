@@ -10,7 +10,7 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycby_xEM6AoFpFPUBc3jZlJCD4dywit-JqLLmOKS6psgH--Qbqc3nT0BVCs5QoRfmpgFQ/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbz3NacmzYYVYZPLIVLhT1lSIHzgrBj0o-ognrDOqqaY8w7jnkA3g207y7-eZ_C_4gFc/exec";
 // const scriptURL = "https://script.google.com/macros/s/AKfycbyzlxISJwaO6O_pWauC9dYT7TPz3NKs6i3h9imFMntB5uTVdf31reibQAzFaLJoS9eJ/exec";
 
 
