@@ -169,10 +169,15 @@ function showAdmin() {
 }
 
 async function loadUsers() {
-  const res = await fetch(`${scriptURL}?action=getUsers&token=${localStorage.getItem("userToken")}`);
-  const users = await res.json();
-  renderUsers(users);
+  try {
+    const res = await fetch(`${scriptURL}?action=getUsers&token=${localStorage.getItem("userToken")}`);
+    const users = await res.json();
+    renderUsers(users);
+  } catch (e) {
+    showToast("Failed to load users", "error");
+  }
 }
+
 
 function renderUsers(users) {
   const tbody = document.getElementById("usersTableBody");
