@@ -279,6 +279,7 @@ function showAdminLogin() {
   document.getElementById("loginWrapper").style.display = "none";
   document.querySelector("#login-section h2").style.display = "none";
   document.querySelector("#login-section p").style.display = "none";
+  document.querySelector("#login-section .btn-secondary").style.display = "none";
   document.getElementById("admin-section").style.display = "block";
 }
 
@@ -350,8 +351,10 @@ async function updateUser(email, status) {
 
 function showAdminPanel() {
   document.getElementById("admin-section").style.display = "block";
+  document.getElementById("adminPanel").style.display = "block";
   loadUsersForAdmin();
 }
+
 
 
 /* ================= GOOGLE LOGIN ================= */
@@ -403,6 +406,13 @@ window.onload = () => {
     { theme: "outline", size: "large", width: "250" }
   );
 };
+
+if (adminToken) {
+  isAdmin = true;
+  showAdminLogin();
+  showAdminPanel();
+}
+
 
 /* ================= IMAGE MODAL ================= */
 
