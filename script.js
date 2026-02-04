@@ -10,7 +10,7 @@ let adminToken = localStorage.getItem("adminToken") || null;
 window.isUploading = false;
 
 const DEV_MODE = false;
-const scriptURL = "https://script.google.com/macros/s/AKfycbyNDWX_-wHG-VL5mWAJz9e5Esv41gF-W8fX2__Fmt6f7FZtxPjh-FSw2McptDZ-0VQ/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbzYIaa1E25aZXtmy55Q6W0XtsNEDG8U0x0ygrSVDWiRw4f8wAKysu0V-DdnyB1PcdLy/exec";
 
 /* ================= TOAST ================= */
 
