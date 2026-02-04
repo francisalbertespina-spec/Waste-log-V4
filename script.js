@@ -12,7 +12,7 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbwX69rSoAy9i1bKy9HmJrgFyyvGSy8h0TFgITgb2Hq9VdFrqsQWhlRBDMZZpOEEZrfY/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbymCCkgGdEF51-c0sS2avPQvNpM6OEj9ZDUD5hSRGmG_KA7J9T60CBTq3argrBnXBjS/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
