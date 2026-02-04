@@ -4,7 +4,6 @@
   padding: 0; 
 }
 
-
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -32,9 +31,10 @@ body {
 
 .header {
   background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
-  padding: 30px 25px;
+  padding: 30px 25px 25px;
   text-align: center;
   color: white;
+  position: relative;
 }
 
 .logo { 
@@ -54,6 +54,73 @@ body {
 .header p { 
   font-size: 0.9rem; 
   opacity: 0.9;
+}
+
+/* User Info Badge */
+.user-info {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.15);
+  padding: 8px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+}
+
+.role-badge {
+  background: rgba(255,255,255,0.25);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.admin {
+  background: #ffd700;
+  color: #333;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  color: #666;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumb-item:hover:not(.active) {
+  color: #d32f2f;
+}
+
+.breadcrumb-item.active {
+  color: #d32f2f;
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+  user-select: none;
 }
 
 .content {
@@ -113,10 +180,38 @@ body {
   color: #333;
 }
 
+/* Menu Section Labels */
+.menu-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  margin: 20px 0 10px 0;
+  padding-left: 5px;
+}
+
+.menu-section-label:first-child {
+  margin-top: 0;
+}
+
+.menu-section-label.admin-label {
+  color: #d32f2f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-section-label.admin-label span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Menu Buttons */
 .menu-grid {
   display: grid;
-  gap: 15px;
+  gap: 12px;
   margin: 20px 0;
 }
 
@@ -130,6 +225,7 @@ body {
   gap: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .menu-btn:hover {
@@ -138,10 +234,25 @@ body {
   box-shadow: 0 5px 15px rgba(211, 47, 47, 0.2);
 }
 
+.menu-btn.admin-btn {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3d0 100%);
+  border-color: #ffd700;
+}
+
+.menu-btn.admin-btn:hover {
+  border-color: #d32f2f;
+  box-shadow: 0 5px 15px rgba(211, 47, 47, 0.3);
+}
+
 .menu-btn .icon {
   font-size: 2rem;
   width: 50px;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-btn .text {
+  flex: 1;
 }
 
 .menu-btn .text h3 {
@@ -153,6 +264,18 @@ body {
 .menu-btn .text p {
   font-size: 0.85rem;
   color: #666;
+}
+
+.menu-btn .arrow {
+  font-size: 1.5rem;
+  color: #ccc;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.menu-btn:hover .arrow {
+  color: #d32f2f;
+  transform: translateX(5px);
 }
 
 /* Form Styles */
@@ -213,16 +336,6 @@ body {
 
 /* Photo Upload */
 .photo-upload {
-  border: 3px dashed #d32f2f;
-  border-radius: 16px;
-  padding: 30px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: #fafafa;
-}
-
-.photo-upload {
   position: relative;
   width: 100%;
   height: 180px;
@@ -232,15 +345,22 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.photo-upload:hover {
+  border-color: #d32f2f;
+  background: #fff5f5;
 }
 
 .photo-upload img.photo-preview {
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* VERY IMPORTANT */
+  object-fit: contain;
   border-radius: 10px;
 }
-
 
 .photo-upload.has-image {
   border-style: solid;
@@ -253,6 +373,7 @@ body {
 
 .photo-upload .placeholder {
   color: #666;
+  text-align: center;
 }
 
 .photo-upload .icon {
@@ -266,7 +387,7 @@ body {
   max-height: 300px;
   object-fit: cover;
   border-radius: 13px;
-  pointer-events: none; /* 🔥 this fixes file input blocking */
+  pointer-events: none;
 }
 
 /* Buttons */
@@ -300,6 +421,10 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
 .btn-secondary {
   background: #f5f5f5;
   color: #333;
@@ -308,6 +433,14 @@ body {
 
 .btn-secondary:hover {
   background: #ececec;
+  border-color: #ccc;
+}
+
+.btn-sm {
+  width: auto;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 0.85rem;
 }
 
 .btn-group {
@@ -392,7 +525,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
-  table-layout: fixed; /* KEY FIX */
+  table-layout: fixed;
 }
 
 th, td {
@@ -402,7 +535,6 @@ th, td {
   text-align: center;
 }
 
-/* Header */
 th {
   background: #fafafa;
   font-weight: 700;
@@ -410,12 +542,10 @@ th {
   border-bottom: 2px solid #e0e0e0;
 }
 
-/* Hover */
 tr:hover {
   background: #f9f9f9;
 }
 
-/* Date, kg, Waste = columns 1,2,3 */
 th:nth-child(1),
 th:nth-child(2),
 th:nth-child(3),
@@ -426,7 +556,6 @@ td:nth-child(3) {
   font-size: 0.85rem;
 }
 
-/* Keep user + photo more spacious */
 th:nth-child(4),
 td:nth-child(4),
 th:nth-child(5),
@@ -434,16 +563,12 @@ td:nth-child(5) {
   padding: 12px 10px;
 }
 
-
-/* User (email) column */
 th:nth-child(4),
 td:nth-child(4) {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
-
-/* Photo column width */
 th:nth-child(5),
 td:nth-child(5) {
   width: 70px;
@@ -461,7 +586,6 @@ td:nth-child(5) {
   margin-bottom: 15px;
   opacity: 0.3;
 }
-
 
 /* Date Range */
 .date-range {
@@ -539,28 +663,18 @@ td:nth-child(5) {
   align-items: center;
   gap: 8px;
   font-weight: 600;
+  transition: opacity 0.2s;
 }
 
 .back-btn:hover {
   opacity: 0.7;
 }
 
-@media (max-width: 600px) {
-  .package-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .date-range {
-    grid-template-columns: 1fr;
-  }
-}
-
 .history-actions {
   display: flex;
-  gap: 15px;   /* spacing between buttons */
+  gap: 15px;
   margin-top: 15px;
 }
-
 
 .image-modal {
   display: none;
@@ -584,6 +698,7 @@ td a.photo-link {
   text-decoration: underline;
 }
 
+/* Login UI */
 #loginWrapper {
   position: relative;
   width: 100%;
@@ -599,16 +714,14 @@ td a.photo-link {
 }
 
 .login-loading-ui {
-  display: none;   /* hidden by default */
+  display: none;
   width: 100%;
   min-height: 150px;
-
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
 }
-
 
 .login-loading-ui p {
   margin-top: 10px;
@@ -626,12 +739,7 @@ td a.photo-link {
   margin-right: 8px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ================= ADMIN PANEL ================= */
-
 .admin-only {
   display: none;
 }
@@ -643,60 +751,97 @@ body.is-admin .admin-only {
 .admin-card {
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px;
-  margin: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  padding: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.admin-card h2 {
+.admin-header {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.admin-header h2 {
   color: #333;
+  margin-bottom: 8px;
+  font-size: 1.5rem;
+}
+
+.admin-header p {
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .admin-block {
-  margin-top: 20px;
+  margin-top: 30px;
+}
+
+.admin-block:first-of-type {
+  margin-top: 0;
+}
+
+.admin-block h3 {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 15px;
 }
 
 .admin-block-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 15px;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
 }
 
 .admin-table th {
-  background: #f2f4f8;
-  color: #444;
-  padding: 10px;
-  font-size: 14px;
+  background: #f8f9fa;
+  color: #555;
+  padding: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .admin-table td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  font-size: 13px;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  color: #333;
 }
 
-.admin-table tr:nth-child(even) {
-  background: #fafafa;
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tr:hover {
+  background: #f8f9fa;
 }
 
 .admin-table button {
-  padding: 6px 10px;
+  padding: 6px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .admin-table button:hover {
   opacity: 0.85;
+  transform: translateY(-1px);
 }
 
 .admin-table button:first-child {
@@ -710,16 +855,29 @@ body.is-admin .admin-only {
   color: white;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: #1976d2;
-  font-size: 14px;
-  cursor: pointer;
-  margin-bottom: 10px;
+/* Responsive Design */
+@media (max-width: 600px) {
+  .package-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-range {
+    grid-template-columns: 1fr;
+  }
+  
+  .history-actions {
+    flex-direction: column;
+  }
+  
+  .breadcrumb {
+    font-size: 0.75rem;
+  }
+  
+  .menu-btn .text h3 {
+    font-size: 1rem;
+  }
+  
+  .menu-btn .text p {
+    font-size: 0.8rem;
+  }
 }
-
-.back-btn:hover {
-  text-decoration: underline;
-}
-
