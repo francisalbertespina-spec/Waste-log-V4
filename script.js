@@ -175,8 +175,6 @@ function backToAdminDashboard() {
 
 function showAdmin() {
   showSection("admin-dashboard");
-  loadUsers();
-  loadRequests();
 }
 
 async function loadUsers() {
