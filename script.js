@@ -160,6 +160,93 @@ function showHistoryView() {
   document.getElementById('fromDate').valueAsDate = weekAgo;
 }
 
+/* ================= ADMIN FUNCTIONS ================= */
+
+function showAdmin() {
+  showSection("admin-section");
+  loadUsers();
+  loadRequests();
+}
+
+async function loadUsers() {
+  const res = await fetch(`${scriptURL}?action=getUsers&token=${localStorage.getItem("userToken")}`);
+  const users = await res.json();
+  renderUsers(users);
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById("usersTableBody");
+  tbody.innerHTML = "";
+
+  users.forEach(u => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.email}</td>
+      <td>${u.status}</td>
+      <td>${u.role || "user"}</td>
+      <td>
+        ${u.status === "pending" ? `
+          <button onclick="approveUser('${u.email}')">Approve</button>
+          <button onclick="rejectUser('${u.email}')">Reject</button>
+        ` : "-"}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function approveUser(email) {
+  if (!confirm("Approve this user?")) return;
+
+  await fetch(scriptURL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "approveUser",
+      email: email,
+      token: localStorage.getItem("userToken")
+    })
+  });
+
+  loadUsers();
+}
+
+async function rejectUser(email) {
+  if (!confirm("Reject this user?")) return;
+
+  await fetch(scriptURL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "rejectUser",
+      email: email,
+      token: localStorage.getItem("userToken")
+    })
+  });
+
+  loadUsers();
+}
+
+async function loadRequests() {
+  const res = await fetch(`${scriptURL}?action=getRequests&token=${localStorage.getItem("userToken")}`);
+  const requests = await res.json();
+  renderRequests(requests);
+}
+
+function renderRequests(requests) {
+  const tbody = document.getElementById("requestsTableBody");
+  tbody.innerHTML = "";
+
+  requests.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.id}</td>
+      <td>${new Date(r.time).toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+
 // Image Compression
 function compressImage(file) {
   return new Promise((resolve, reject) => {
