@@ -461,3 +461,7 @@ function closeImageModal() {
   document.getElementById("imageModal").style.display = "none";
   document.getElementById("modalImage").src = "";
 }
+
+// expose functions for inline HTML onclick
+window.exportExcel = exportExcel;
+window.loadHistory = loadHistory;
