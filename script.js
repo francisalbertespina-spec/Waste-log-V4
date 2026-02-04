@@ -87,6 +87,9 @@ function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   
+  // Update toggle state when section changes
+  updateToggleState(id);
+  
   // Update breadcrumb package names
   updateBreadcrumbs();
 }
@@ -133,13 +136,7 @@ function backToPackage() {
   document.querySelectorAll('.package-card')
     .forEach(c => c.classList.remove('selected'));
   
-  // Check if user is admin - send them to role selection instead
-  const userRole = localStorage.getItem("userRole");
-  if (userRole === "admin") {
-    showSection("role-section");
-  } else {
-    showSection("package-section");
-  }
+  showSection("package-section");
 }
 
 function showMenu() {
@@ -161,23 +158,6 @@ function showHistoryView() {
 
 /* ================= ADMIN FUNCTIONS ================= */
 
-// Role selection functions
-function selectUserMode() {
-  showSection("package-section");
-}
-
-function selectAdminMode() {
-  showSection("admin-dashboard");
-}
-
-function backToRoleSelection() {
-  showSection("role-section");
-}
-
-function backToAdminDashboard() {
-  showSection("admin-dashboard");
-}
-
 // Admin dashboard navigation
 function showUserManagement() {
   showSection("user-management-section");
@@ -187,6 +167,10 @@ function showUserManagement() {
 function showRequestLogs() {
   showSection("request-logs-section");
   loadRequests();
+}
+
+function backToAdminDashboard() {
+  showSection("admin-dashboard");
 }
 
 function showAdmin() {
@@ -609,6 +593,7 @@ function displayUserInfo(name, role) {
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
   const roleBadge = document.getElementById('user-role-badge');
+  const modeToggle = document.getElementById('mode-toggle');
   
   if (userInfo && userName && roleBadge) {
     userName.textContent = name;
@@ -616,10 +601,61 @@ function displayUserInfo(name, role) {
     
     if (role === 'admin') {
       roleBadge.classList.add('admin');
+      // Show mode toggle for admins
+      if (modeToggle) {
+        modeToggle.style.display = 'flex';
+        updateModeLabels(false); // Start in user mode
+      }
     }
     
-    userInfo.style.display = 'block';
+    userInfo.style.display = 'flex';
   }
+}
+
+// Toggle between admin and user modes
+function toggleAdminMode() {
+  const toggle = document.getElementById('admin-mode-toggle');
+  const isAdminMode = toggle.checked;
+  
+  updateModeLabels(isAdminMode);
+  
+  if (isAdminMode) {
+    // Switch to admin mode
+    showSection('admin-dashboard');
+    showToast('Switched to Admin mode', 'info');
+  } else {
+    // Switch to user mode
+    showSection('package-section');
+    showToast('Switched to User mode', 'info');
+  }
+}
+
+// Update mode label highlighting
+function updateModeLabels(isAdminMode) {
+  const userLabel = document.getElementById('mode-label-user');
+  const adminLabel = document.getElementById('mode-label-admin');
+  
+  if (userLabel && adminLabel) {
+    if (isAdminMode) {
+      userLabel.classList.remove('active');
+      adminLabel.classList.add('active');
+    } else {
+      userLabel.classList.add('active');
+      adminLabel.classList.remove('active');
+    }
+  }
+}
+
+// Update toggle state based on current section
+function updateToggleState(sectionId) {
+  const toggle = document.getElementById('admin-mode-toggle');
+  if (!toggle) return;
+  
+  const adminSections = ['admin-dashboard', 'user-management-section', 'request-logs-section'];
+  const isAdminSection = adminSections.includes(sectionId);
+  
+  toggle.checked = isAdminSection;
+  updateModeLabels(isAdminSection);
 }
 
 // Logout function
@@ -666,12 +702,12 @@ async function handleCredentialResponse(response) {
 
       showToast(`Welcome, ${name}!`, "success");
 
-      // Show role selection for admins, package selection for users
+      // Always start with package selection (user mode)
+      showSection("package-section");
+      
+      // Enable admin UI if admin
       if (data.role === "admin") {
         enableAdminUI();
-        showSection("role-section");
-      } else {
-        showSection("package-section");
       }
     } else if (data.status === "Rejected") {
       showToast("Access denied by admin", "error");
