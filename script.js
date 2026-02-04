@@ -247,31 +247,68 @@ function closeModal() {
 /* ================= HISTORY ================= */
 
 async function loadHistory() {
-  const from = fromDate.value;
-  const to = toDate.value;
-  const url = `${scriptURL}?package=${selectedPackage}&from=${from}&to=${to}`;
+  const fromDate = document.getElementById("fromDate").value;
+  const toDate = document.getElementById("toDate").value;
 
-  const res = await fetch(url);
-  const rows = await res.json();
-  loadedRows = rows;
+  const loading = document.getElementById("loading");
+  const tableContainer = document.getElementById("table-container");
+  const emptyState = document.getElementById("empty-state");
+  const tableBody = document.getElementById("table-body");
 
-  const tbody = document.getElementById("table-body");
-  tbody.innerHTML = "";
+  // UI RESET
+  tableContainer.style.display = "none";
+  emptyState.style.display = "none";
+  tableBody.innerHTML = "";
 
-  rows.slice(1).forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${new Date(r[0]).toLocaleDateString()}</td>
-      <td>${r[1]}</td>
-      <td>${r[2]}</td>
-      <td>${r[4]}</td>
-      <td><a onclick="openImageModal('${r[5]}')">View</a></td>
-    `;
-    tbody.appendChild(tr);
-  });
+  // ✅ SHOW SPINNER FIRST
+  loading.style.display = "block";
 
-  document.getElementById("table-container").style.display = "block";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getHistory",
+        package: selectedPackage,
+        fromDate,
+        toDate
+      })
+    });
+
+    const data = await res.json();
+
+    // HIDE SPINNER AFTER DATA ARRIVES
+    loading.style.display = "none";
+
+    if (!data || !data.records || data.records.length === 0) {
+      emptyState.style.display = "block";
+      return;
+    }
+
+    data.records.forEach(row => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${row.date}</td>
+        <td>${row.volume}</td>
+        <td>${row.waste}</td>
+        <td>${row.user}</td>
+        <td>
+          <img src="${row.photo}" style="width:60px;cursor:pointer" onclick="openImageModal('${row.photo}')">
+        </td>
+      `;
+
+      tableBody.appendChild(tr);
+    });
+
+    tableContainer.style.display = "block";
+
+  } catch (err) {
+    console.error(err);
+    loading.style.display = "none";
+    alert("Failed to load records.");
+  }
 }
+
 
 /* ================= ADMIN ================= */
 
