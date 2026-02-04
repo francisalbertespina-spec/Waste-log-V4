@@ -15,6 +15,12 @@
       <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
       <h1>Hazardous Waste Log</h1>
       <p>HDJV Environmental Management</p>
+      <div id="user-info" class="user-info" style="display: none;">
+        <div class="user-badge">
+          <span id="user-name"></span>
+          <span id="user-role-badge" class="role-badge"></span>
+        </div>
+      </div>
     </div>
 
     <div class="content">
@@ -25,8 +31,7 @@
           Please sign in with your authorized Google account to continue
         </p>
         
-
-      <div id="loginWrapper">
+        <div id="loginWrapper">
           <div id="buttonDiv" style="display:flex; justify-content:center;"></div>
         
           <div id="loginLoadingUI" class="login-loading-ui">
@@ -36,7 +41,6 @@
         </div>
       </div>
       
-
       <!-- Package Selection -->
       <div id="package-section" class="section">
         <h2 style="margin-bottom: 10px; color: #333;">Select Package</h2>
@@ -60,52 +64,82 @@
         <button class="btn btn-primary" onclick="confirmPackage()">
           Continue
         </button>
+        
+        <button class="btn btn-secondary" onclick="logout()" style="margin-top: 10px;">
+          Sign Out
+        </button>
       </div>
 
-      <<!-- Menu Section -->
-          <div id="menu-section" class="section">
-            <button class="back-btn" onclick="backToPackage()">
-              ← Back to Packages
-            </button>
+      <!-- Menu Section -->
+      <div id="menu-section" class="section">
+        <button class="back-btn" onclick="backToPackage()">
+          ← Back to Packages
+        </button>
+        
+        <div class="breadcrumb">
+          <span class="breadcrumb-item active" id="current-package"></span>
+        </div>
+      
+        <h2 style="margin-bottom: 10px; color: #333;">What would you like to do?</h2>
+        <p style="color: #666; margin-bottom: 25px;">Choose an action below</p>
+      
+        <div class="menu-grid">
+          <!-- User Actions -->
+          <div class="menu-section-label">User Actions</div>
           
-            <h2 style="margin-bottom: 20px; color: #333;">What would you like to do?</h2>
+          <div class="menu-btn" onclick="showLogForm()">
+            <div class="icon">✏️</div>
+            <div class="text">
+              <h3>Log New Entry</h3>
+              <p>Record new waste disposal</p>
+            </div>
+            <div class="arrow">→</div>
+          </div>
+      
+          <div class="menu-btn" onclick="showHistoryView()">
+            <div class="icon">📊</div>
+            <div class="text">
+              <h3>View Records</h3>
+              <p>Browse past entries</p>
+            </div>
+            <div class="arrow">→</div>
+          </div>
           
-            <div class="menu-grid">
-          
-              <div class="menu-btn admin-only" onclick="showAdmin()">
-                <div class="icon">🛠️</div>
-                <div class="text">
-                  <h3>Admin Panel</h3>
-                  <p>Approve users & view logs</p>
-                </div>
+          <!-- Admin Actions (visible only to admins) -->
+          <div class="admin-only">
+            <div class="menu-section-label admin-label">
+              <span>🛡️ Admin Actions</span>
+            </div>
+            
+            <div class="menu-btn admin-btn" onclick="showAdmin()">
+              <div class="icon">🛠️</div>
+              <div class="text">
+                <h3>Admin Panel</h3>
+                <p>Manage users & view logs</p>
               </div>
-          
-              <div class="menu-btn" onclick="showLogForm()">
-                <div class="icon">✏️</div>
-                <div class="text">
-                  <h3>Log New Entry</h3>
-                  <p>Record new waste disposal</p>
-                </div>
-              </div>
-          
-              <div class="menu-btn" onclick="showHistoryView()">
-                <div class="icon">📊</div>
-                <div class="text">
-                  <h3>View Records</h3>
-                  <p>Browse past entries</p>
-                </div>
-              </div>
-          
+              <div class="arrow">→</div>
             </div>
           </div>
-
-       
+        </div>
+        
+        <button class="btn btn-secondary" onclick="backToPackage()" style="margin-top: 20px;">
+          Change Package
+        </button>
+      </div>
 
       <!-- Form Section -->
       <div id="form-section" class="section">
         <button class="back-btn" onclick="showMenu()">
           ← Back to Menu
         </button>
+        
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" onclick="backToPackage()">Packages</span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item" onclick="showMenu()" id="form-package"></span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item active">New Entry</span>
+        </div>
 
         <h2 style="margin-bottom: 20px; color: #333;">New Entry</h2>
 
@@ -162,6 +196,14 @@
         <button class="back-btn" onclick="showMenu()">
           ← Back to Menu
         </button>
+        
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" onclick="backToPackage()">Packages</span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item" onclick="showMenu()" id="history-package"></span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item active">View Records</span>
+        </div>
 
         <h2 style="margin-bottom: 20px; color: #333;">View Records</h2>
 
@@ -212,59 +254,69 @@
           <p style="font-size: 0.9rem;">Select a date range and click "Load Entries"</p>
         </div>
       </div>
+      
+      <!-- Admin Section -->
+      <div id="admin-section" class="section admin-only">
+        <button class="back-btn" onclick="showMenu()">← Back to Menu</button>
+        
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" onclick="backToPackage()">Packages</span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item" onclick="showMenu()" id="admin-package"></span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item active">Admin Panel</span>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-header">
+            <h2>🛠️ Admin Panel</h2>
+            <p>Manage users and monitor system activity</p>
+          </div>
+
+          <!-- USERS -->
+          <div class="admin-block">
+            <div class="admin-block-header">
+              <h3>👥 User Management</h3>
+              <button class="btn btn-sm" onclick="loadUsers()">Refresh</button>
+            </div>
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Role</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- REQUEST LOGS -->
+          <div class="admin-block">
+            <div class="admin-block-header">
+              <h3>📝 Request Logs</h3>
+              <button class="btn btn-sm" onclick="loadRequests()">Refresh</button>
+            </div>
+
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="footer">
       Created by <strong>E. Francis Albert</strong>
     </div>
   </div>
-
-  <!-- Admin Section -->
-  <div class="section admin-only" id="admin-section">
-
-  <button class="back-btn" onclick="showMenu()">← Back</button>
-
-  <div class="admin-card">
-    <h2>Admin Panel</h2>
-
-    <!-- USERS -->
-    <div class="admin-block">
-      <h3>Users</h3>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Role</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="usersTableBody"></tbody>
-      </table>
-    </div>
-
-    <!-- REQUEST LOGS -->
-    <div class="admin-block">
-      <div class="admin-block-header">
-        <h3>Request Logs</h3>
-        <button class="btn" onclick="loadRequests()">Refresh</button>
-      </div>
-
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Request ID</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody id="requestsTableBody"></tbody>
-      </table>
-    </div>
-
-  </div>
-</div>
-
-
 
   <!-- Modal -->
   <div id="modal" class="modal">
@@ -275,18 +327,12 @@
     </div>
   </div>
 
-   <!-- Image Preview Modal -->
+  <!-- Image Preview Modal -->
   <div id="imageModal" class="image-modal" onclick="closeImageModal()">
     <img id="modalImage" alt="Preview" onclick="event.stopPropagation()">
   </div>
 
-
-  
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="script.js"></script>
-
 </body>
 </html>
-
-
-
