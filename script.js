@@ -275,7 +275,23 @@ async function loadHistory() {
 
 /* ================= ADMIN ================= */
 
-async function adminLogin(email, password) {
+function showAdminLogin() {
+  document.getElementById("loginWrapper").style.display = "none";
+  document.querySelector("#login-section h2").style.display = "none";
+  document.querySelector("#login-section p").style.display = "none";
+  document.getElementById("admin-section").style.display = "block";
+}
+
+
+async function adminLogin() {
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value.trim();
+
+  if (!email || !password) {
+    showToast("Enter email and password", "error");
+    return;
+  }
+
   showToast("Logging in...", "info", { spinner: true, persistent: true });
 
   const res = await fetch(scriptURL, {
@@ -294,6 +310,7 @@ async function adminLogin(email, password) {
   showToast("Admin logged in", "success");
   showAdminPanel();
 }
+
 
 async function loadUsersForAdmin() {
   const res = await fetch(scriptURL, {
@@ -332,9 +349,10 @@ async function updateUser(email, status) {
 }
 
 function showAdminPanel() {
-  showSection("admin-section");
+  document.getElementById("admin-section").style.display = "block";
   loadUsersForAdmin();
 }
+
 
 /* ================= GOOGLE LOGIN ================= */
 
@@ -363,6 +381,14 @@ async function handleCredentialResponse(response) {
     showToast("Awaiting approval", "info");
   }
 }
+
+function showUserLogin() {
+  document.getElementById("admin-section").style.display = "none";
+  document.getElementById("loginWrapper").style.display = "block";
+  document.querySelector("#login-section h2").style.display = "block";
+  document.querySelector("#login-section p").style.display = "block";
+}
+
 
 /* ================= INIT ================= */
 
