@@ -8,7 +8,7 @@
   <link href="style.css" rel="stylesheet" type="text/css"> 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-
+  
 <body>
   <div class="app-container">
     <div class="header">
@@ -41,6 +41,30 @@
         </div>
       </div>
       
+      <!-- Role Selection (Admin Only) -->
+      <div id="role-section" class="section admin-only">
+        <h2 style="margin-bottom: 10px; color: #333;">Choose Your Mode</h2>
+        <p style="color: #666; margin-bottom: 30px;">Would you like to access the system as a user or administrator?</p>
+        
+        <div class="role-grid">
+          <div class="role-card" onclick="selectUserMode()">
+            <div class="icon">👤</div>
+            <div class="role-title">User Panel</div>
+            <div class="role-desc">Log waste entries and view records</div>
+          </div>
+          
+          <div class="role-card admin-card" onclick="selectAdminMode()">
+            <div class="icon">🛡️</div>
+            <div class="role-title">Admin Panel</div>
+            <div class="role-desc">Manage users and system settings</div>
+          </div>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="logout()" style="margin-top: 20px;">
+          Sign Out
+        </button>
+      </div>
+
       <!-- Package Selection -->
       <div id="package-section" class="section">
         <h2 style="margin-bottom: 10px; color: #333;">Select Package</h2>
@@ -84,9 +108,6 @@
         <p style="color: #666; margin-bottom: 25px;">Choose an action below</p>
       
         <div class="menu-grid">
-          <!-- User Actions -->
-          <div class="menu-section-label">User Actions</div>
-          
           <div class="menu-btn" onclick="showLogForm()">
             <div class="icon">✏️</div>
             <div class="text">
@@ -103,22 +124,6 @@
               <p>Browse past entries</p>
             </div>
             <div class="arrow">→</div>
-          </div>
-          
-          <!-- Admin Actions (visible only to admins) -->
-          <div class="admin-only">
-            <div class="menu-section-label admin-label">
-              <span>🛡️ Admin Actions</span>
-            </div>
-            
-            <div class="menu-btn admin-btn" onclick="showAdmin()">
-              <div class="icon">🛠️</div>
-              <div class="text">
-                <h3>Admin Panel</h3>
-                <p>Manage users & view logs</p>
-              </div>
-              <div class="arrow">→</div>
-            </div>
           </div>
         </div>
         
@@ -255,28 +260,53 @@
         </div>
       </div>
       
-      <!-- Admin Section -->
-      <div id="admin-section" class="section admin-only">
-        <button class="back-btn" onclick="showMenu()">← Back to Menu</button>
+      <!-- Admin Dashboard -->
+      <div id="admin-dashboard" class="section admin-only">
+        <button class="back-btn" onclick="backToRoleSelection()">← Back to Mode Selection</button>
+        
+        <div class="admin-dashboard-header">
+          <h2>🛡️ Admin Dashboard</h2>
+          <p>Manage users and monitor system activity</p>
+        </div>
+
+        <div class="admin-menu-grid">
+          <div class="admin-menu-card" onclick="showUserManagement()">
+            <div class="admin-menu-icon">👥</div>
+            <h3>User Management</h3>
+            <p>Approve or reject user access</p>
+            <div class="arrow">→</div>
+          </div>
+          
+          <div class="admin-menu-card" onclick="showRequestLogs()">
+            <div class="admin-menu-icon">📝</div>
+            <h3>Request Logs</h3>
+            <p>View system activity logs</p>
+            <div class="arrow">→</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Management Section -->
+      <div id="user-management-section" class="section admin-only">
+        <button class="back-btn" onclick="backToAdminDashboard()">← Back to Admin Dashboard</button>
         
         <div class="breadcrumb">
-          <span class="breadcrumb-item" onclick="backToPackage()">Packages</span>
+          <span class="breadcrumb-item" onclick="backToRoleSelection()">Mode Selection</span>
           <span class="breadcrumb-separator">›</span>
-          <span class="breadcrumb-item" onclick="showMenu()" id="admin-package"></span>
+          <span class="breadcrumb-item" onclick="backToAdminDashboard()">Admin Dashboard</span>
           <span class="breadcrumb-separator">›</span>
-          <span class="breadcrumb-item active">Admin Panel</span>
+          <span class="breadcrumb-item active">User Management</span>
         </div>
 
         <div class="admin-card">
           <div class="admin-header">
-            <h2>🛠️ Admin Panel</h2>
-            <p>Manage users and monitor system activity</p>
+            <h2>👥 User Management</h2>
+            <p>Approve or reject user access requests</p>
           </div>
 
-          <!-- USERS -->
           <div class="admin-block">
             <div class="admin-block-header">
-              <h3>👥 User Management</h3>
+              <h3>All Users</h3>
               <button class="btn btn-sm" onclick="loadUsers()">Refresh</button>
             </div>
             <table class="admin-table">
@@ -291,11 +321,30 @@
               <tbody id="usersTableBody"></tbody>
             </table>
           </div>
+        </div>
+      </div>
 
-          <!-- REQUEST LOGS -->
+      <!-- Request Logs Section -->
+      <div id="request-logs-section" class="section admin-only">
+        <button class="back-btn" onclick="backToAdminDashboard()">← Back to Admin Dashboard</button>
+        
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" onclick="backToRoleSelection()">Mode Selection</span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item" onclick="backToAdminDashboard()">Admin Dashboard</span>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item active">Request Logs</span>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-header">
+            <h2>📝 Request Logs</h2>
+            <p>System activity and request history</p>
+          </div>
+
           <div class="admin-block">
             <div class="admin-block-header">
-              <h3>📝 Request Logs</h3>
+              <h3>Recent Requests</h3>
               <button class="btn btn-sm" onclick="loadRequests()">Refresh</button>
             </div>
 
@@ -311,6 +360,11 @@
           </div>
         </div>
       </div>
+      
+      <!-- Old Admin Section - Remove this -->
+      <div id="admin-section" class="section admin-only" style="display: none;">
+        <button class="back-btn" onclick="showMenu()">← Back to Menu</button>
+      
     </div>
 
     <div class="footer">
@@ -336,4 +390,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
