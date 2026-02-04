@@ -5,6 +5,8 @@ let pendingRequestId = null;
 let toastQueue = [];
 let activeToast = null;
 let toastTimer = null;
+let isAdmin = false;
+let adminToken = localStorage.getItem("adminToken") || null;
 window.isUploading = false;
 
 
@@ -564,6 +566,100 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
+// Admin login
+async function adminLogin(email, password) {
+  try {
+    showToast("Logging in as admin...", "info", { spinner: true, persistent: true });
+
+    const res = await fetch(scriptURL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "loginAdmin",
+        email,
+        password
+      })
+    });
+
+    const data = await res.json();
+    dismissToast(activeToast);
+
+    if (!data.success) {
+      showToast(data.message || "Login failed", "error");
+      return;
+    }
+
+    adminToken = data.token;
+    localStorage.setItem("adminToken", data.token);
+    isAdmin = true;
+
+    showToast("Admin logged in", "success");
+    showAdminPanel();
+
+  } catch (err) {
+    dismissToast(activeToast);
+    console.error(err);
+    showToast("Admin login error", "error");
+  }
+}
+
+async function loadUsersForAdmin() {
+  if (!adminToken) {
+    showToast("Admin not authenticated", "error");
+    return;
+  }
+
+  const res = await fetch(scriptURL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "getUsers",
+      token: adminToken
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    showToast("Unauthorized", "error");
+    return;
+  }
+
+  const list = document.getElementById("admin-user-list");
+  list.innerHTML = "";
+
+  data.users.forEach(u => {
+    const row = document.createElement("div");
+    row.innerHTML = `
+      <strong>${u.email}</strong> — ${u.status}
+      <button onclick="updateUser('${u.email}','Approved')">Approve</button>
+      <button onclick="updateUser('${u.email}','Rejected')">Reject</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// Update user
+
+async function updateUser(email, status) {
+  const res = await fetch(scriptURL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateUserStatus",
+      token: adminToken,
+      email,
+      status
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    showToast(`User ${status}`, "success");
+    loadUsersForAdmin();
+  } else {
+    showToast(data.error || "Update failed", "error");
+  }
+}
+
+
 // Google login handler
 async function handleCredentialResponse(response) {
   setLoginLoading(true);   // ✅ start spinner ONLY after click
@@ -597,6 +693,12 @@ async function handleCredentialResponse(response) {
   }
 }
 
+
+function showAdminPanel() {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById("admin-section").classList.add("active");
+  loadUsersForAdmin();
+}
 
 
 
