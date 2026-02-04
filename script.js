@@ -7,7 +7,6 @@ let activeToast = null;
 let toastTimer = null;
 window.isUploading = false;
 
-
 const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxMN4txNU7LHTdVLRI-EqbAaj-cihydLSrCees7NLJCKk60APcrDYw_T0V358BSRXJN/exec";
@@ -347,13 +346,20 @@ async function addEntry() {
 
   showToast("Uploading entry...", "info", { persistent: true, spinner: true });
 
+  // Extract base64 data (remove "data:image/jpeg;base64," prefix)
+  const base64Data = compressedImageBase64.split(',')[1];
+  
+  // Generate unique request ID to prevent duplicates
+  const requestId = `REQ_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   const formData = {
-    action: "submitEntry",
+    requestId: requestId,
     package: selectedPackage,
     date: dateField.value,
     volume: volumeField.value,
     waste: wasteField.value,
-    photo: compressedImageBase64,
+    imageByte: base64Data,  // Backend expects "imageByte"
+    imageName: `Waste_${selectedPackage}_${Date.now()}.jpg`,  // Backend expects "imageName"
     token: localStorage.getItem("userToken")
   };
 
@@ -367,12 +373,12 @@ async function addEntry() {
 
     if (activeToast) dismissToast(activeToast);
 
-    if (result.status === "success") {
+    if (result.success) {
       showToast("Entry submitted successfully!", "success");
       document.getElementById('modal').classList.add('active');
       resetForm();
     } else {
-      showToast(result.message || "Upload failed", "error");
+      showToast(result.error || result.message || "Upload failed", "error");
     }
 
   } catch (err) {
