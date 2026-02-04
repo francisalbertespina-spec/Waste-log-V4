@@ -218,33 +218,49 @@
 
   <!-- Admin Section -->
   <div class="section admin-only" id="admin-section">
-  <h2>Admin Panel</h2>
 
-  <h3>Users</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Status</th>
-        <th>Role</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="usersTableBody"></tbody>
-  </table>
+  <button class="back-btn" onclick="showMenu()">← Back</button>
 
-  <h3>Requests Log</h3>
-  <button onclick="loadRequests()">Refresh Requests</button>
-  <table>
-    <thead>
-      <tr>
-        <th>Request ID</th>
-        <th>Timestamp</th>
-      </tr>
-    </thead>
-    <tbody id="requestsTableBody"></tbody>
-  </table>
+  <div class="admin-card">
+    <h2>Admin Panel</h2>
+
+    <!-- USERS -->
+    <div class="admin-block">
+      <h3>Users</h3>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Role</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- REQUEST LOGS -->
+    <div class="admin-block">
+      <div class="admin-block-header">
+        <h3>Request Logs</h3>
+        <button class="btn" onclick="loadRequests()">Refresh</button>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="requestsTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
 </div>
+
 
 
   <!-- Modal -->
@@ -269,3 +285,4 @@
 
 </body>
 </html>
+
