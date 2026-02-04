@@ -7,30 +7,12 @@ let activeToast = null;
 let toastTimer = null;
 window.isUploading = false;
 
-
 const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxMN4txNU7LHTdVLRI-EqbAaj-cihydLSrCees7NLJCKk60APcrDYw_T0V358BSRXJN/exec";
-// const scriptURL = "https://script.google.com/macros/s/AKfycbyzlxISJwaO6O_pWauC9dYT7TPz3NKs6i3h9imFMntB5uTVdf31reibQAzFaLJoS9eJ/exec";
-
-
-// Waste-Log-Auth-V3
-// Working script = Deployement V3-rev1
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwpSUI8zSMeNiDLoLdqNRWmJuOw3HIRR2Txev_YXnX782TW6zcL0yXeJglCiJ9qLmA/exec";
-
-
-// Waste-Log-Auth-V2
-// working script = Deployment HWTR-1
-// const scriptURL = "https://script.google.com/macros/s/AKfycbylJMo7GXUndNLUjxvCfUu1pQ0UpQH0OL9MeG71a0zyVFZ0wQ41RGoYKVhC8HFdhJZQBQ/exec";
-
-
-// Waste-Log-Auth-V1
-// working script = Deployment 1-26-2026-rev6
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwyAIPb1OXyEWjau0-3OM4_e5FWLr-wuBHTx0otEzPABLomL5FRi4BsPs39bF1VfClA/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
-
   toastQueue.push({ message, type, persistent, spinner, duration });
   processToastQueue();
 }
@@ -39,19 +21,17 @@ function processToastQueue() {
   if (activeToast || toastQueue.length === 0) return;
 
   const { message, type, persistent, spinner, duration } = toastQueue.shift();
-
   const icons = { success: "✅", error: "❌", info: "ℹ️" };
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
 
-  // ICON or SPINNER
   const iconWrap = document.createElement("div");
   iconWrap.className = "toast-icon";
 
   if (spinner) {
     const spin = document.createElement("div");
-    spin.className = "toast-spinner";   // small spinner
+    spin.className = "toast-spinner";
     iconWrap.appendChild(spin);
   } else {
     iconWrap.textContent = icons[type] || "ℹ️";
@@ -59,7 +39,6 @@ function processToastQueue() {
 
   toast.appendChild(iconWrap);
 
-  // MESSAGE
   const msg = document.createElement("div");
   msg.className = "toast-message";
   msg.textContent = message;
@@ -68,7 +47,6 @@ function processToastQueue() {
   document.body.appendChild(toast);
   activeToast = toast;
 
-  // AUTO DISMISS
   if (!persistent) {
     toastTimer = setTimeout(() => dismissToast(toast), duration || 3000);
   }
@@ -89,10 +67,6 @@ function dismissToast(toast) {
   }, 300);
 }
 
-
-
-
-
 function setLoginLoading(isLoading) {
   const btn = document.getElementById("buttonDiv");
   const loadingUI = document.getElementById("loginLoadingUI");
@@ -108,12 +82,31 @@ function setLoginLoading(isLoading) {
   }
 }
 
-
-
 // Section management
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  
+  // Update breadcrumb package names
+  updateBreadcrumbs();
+}
+
+// Update breadcrumb package displays
+function updateBreadcrumbs() {
+  if (selectedPackage) {
+    const packageName = `Package ${selectedPackage.replace('P', '')}`;
+    
+    // Update all breadcrumb package references
+    const currentPkg = document.getElementById('current-package');
+    const formPkg = document.getElementById('form-package');
+    const historyPkg = document.getElementById('history-package');
+    const adminPkg = document.getElementById('admin-package');
+    
+    if (currentPkg) currentPkg.textContent = packageName;
+    if (formPkg) formPkg.textContent = packageName;
+    if (historyPkg) historyPkg.textContent = packageName;
+    if (adminPkg) adminPkg.textContent = packageName;
+  }
 }
 
 // Package selection
@@ -127,13 +120,13 @@ function selectPackage(pkg, el) {
 
 function confirmPackage() {
   if (!selectedPackage) {
-    alert("Please select a package first.");
+    showToast("Please select a package first", "error");
     return;
   }
 
+  updateBreadcrumbs();
   showSection("menu-section");
 }
-
 
 function backToPackage() {
   selectedPackage = "";
@@ -141,7 +134,6 @@ function backToPackage() {
     .forEach(c => c.classList.remove('selected'));
   showSection("package-section");
 }
-
 
 function showMenu() {
   showSection('menu-section');
@@ -178,7 +170,6 @@ async function loadUsers() {
   }
 }
 
-
 function renderUsers(users) {
   const tbody = document.getElementById("usersTableBody");
   tbody.innerHTML = "";
@@ -186,14 +177,14 @@ function renderUsers(users) {
   users.forEach(u => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${u.email}</td>
+      <td style="text-align: left;">${u.email}</td>
       <td>${u.status}</td>
       <td>${u.role || "user"}</td>
       <td>
         ${u.status === "Pending" ? `
           <button onclick="approveUser('${u.email}')">Approve</button>
           <button onclick="rejectUser('${u.email}')">Reject</button>
-        ` : "-"}
+        ` : "—"}
       </td>
     `;
     tbody.appendChild(tr);
@@ -205,6 +196,7 @@ async function approveUser(email) {
 
   await fetch(`${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
   loadUsers();
+  showToast("User approved", "success");
 }
 
 async function rejectUser(email) {
@@ -212,8 +204,8 @@ async function rejectUser(email) {
 
   await fetch(`${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
   loadUsers();
+  showToast("User rejected", "success");
 }
-
 
 async function loadRequests() {
   const res = await fetch(`${scriptURL}?action=getRequests&token=${localStorage.getItem("userToken")}`);
@@ -228,14 +220,12 @@ function renderRequests(requests) {
   requests.forEach(r => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.id}</td>
+      <td style="text-align: left;">${r.id}</td>
       <td>${new Date(r.time).toLocaleString()}</td>
     `;
     tbody.appendChild(tr);
   });
 }
-
-
 
 // Image Compression
 function compressImage(file) {
@@ -291,20 +281,13 @@ async function previewImage(event) {
     uploadDiv.appendChild(img);
   }
 
-  // 🔥 COMPRESS HERE
   const compressedBase64 = await compressImage(file);
-
-  // Save for upload later
   compressedImageBase64 = compressedBase64;
-
-  // Preview compressed image
   img.src = compressedBase64;
 
   uploadDiv.classList.add("has-image");
   if (placeholder) placeholder.style.display = "none";
 }
-
-
 
 // Form validation
 function validateForm() {
@@ -315,156 +298,110 @@ function validateForm() {
   if (!date) return false;
   if (!volume) return false;
   if (!waste) return false;
-
-  // ✅ NEW: validate using compressed image, not UI class
   if (!compressedImageBase64) return false;
 
   return true;
 }
 
-
-// Timeout Helper
-function fetchWithTimeout(resource, options = {}, timeout = 30000) {
-  return Promise.race([
-    fetch(resource, options),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Upload timeout")), timeout)
-    )
-  ]);
-}
-
-// reset form
-function resetFormAfterSuccess() {
-  pendingRequestId = null;
-
-  document.getElementById("date").value = "";
-  document.getElementById("volume").value = "";
-  document.getElementById("waste").value = "";
-
-  const photoInput = document.getElementById("photo");
-  if (photoInput) photoInput.value = null;
-
-  compressedImageBase64 = "";
-
-  const uploadDiv = document.querySelector(".photo-upload");
-  if (uploadDiv) uploadDiv.classList.remove("has-image");
-
-  const img = uploadDiv?.querySelector("img");
-  if (img) img.remove();
-
-  const placeholder = uploadDiv?.querySelector(".placeholder");
-  if (placeholder) placeholder.style.display = "block";
-
-  const modal = document.getElementById("modal");
-  if (modal) modal.classList.add("active");
-}
-
-
-// Add entry
 async function addEntry() {
-  if (window.isUploading) return;
-  window.isUploading = true;
+  const dateField = document.getElementById("date");
+  const volumeField = document.getElementById("volume");
+  const wasteField = document.getElementById("waste");
 
+  document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+
+  if (!dateField.value) {
+    document.getElementById('date-group').classList.add('error');
+    showToast("Please select a date", "error");
+    return;
+  }
+
+  if (!volumeField.value) {
+    document.getElementById('volume-group').classList.add('error');
+    showToast("Please enter volume", "error");
+    return;
+  }
+
+  if (!wasteField.value) {
+    document.getElementById('waste-group').classList.add('error');
+    showToast("Please select waste type", "error");
+    return;
+  }
+
+  if (!compressedImageBase64) {
+    document.getElementById('photo-group').classList.add('error');
+    showToast("Please upload a photo", "error");
+    return;
+  }
+
+  if (window.isUploading) {
+    showToast("Upload already in progress", "info");
+    return;
+  }
+
+  window.isUploading = true;
   const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled = true;
+  submitBtn.textContent = "Uploading...";
 
-  let slowTimer;
-  let spinnerToastActive = true;
+  showToast("Uploading entry...", "info", { persistent: true, spinner: true });
+
+  const formData = {
+    action: "submitEntry",
+    package: selectedPackage,
+    date: dateField.value,
+    volume: volumeField.value,
+    waste: wasteField.value,
+    photo: compressedImageBase64,
+    token: localStorage.getItem("userToken")
+  };
 
   try {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      showToast("Session expired. Please log in again.", "error");
-      showSection("login-section");
-      return;
-    }
-
-    if (!validateForm()) {
-      showToast("Please fill in all required fields", "error");
-      return;
-    }
-
-    if (!selectedPackage) {
-      showToast("No package selected", "error");
-      return;
-    }
-
-    if (!compressedImageBase64) {
-      showToast("Photo not ready. Please take photo again.", "error");
-      return;
-    }
-
-    // Spinner toast
-    showToast("Uploading entry...", "info", { persistent: true, spinner: true });
-
-    if (!pendingRequestId) {
-      pendingRequestId = crypto.randomUUID();
-    }
-
-    const rowData = {
-      requestId: pendingRequestId,
-      package: selectedPackage,
-      date: document.getElementById("date").value,
-      volume: document.getElementById("volume").value,
-      waste: document.getElementById("waste").value,
-      token: token,
-      imageByte: compressedImageBase64.split(",")[1],
-      imageName: `Waste_${Date.now()}.jpg`
-    };
-
-    slowTimer = setTimeout(() => {
-      showToast("Still uploading… please wait", "info");
-    }, 8000);
-
-    const res = await fetchWithTimeout(scriptURL, {
+    const res = await fetch(scriptURL, {
       method: "POST",
-      body: JSON.stringify(rowData)
-    }, 30000);
-
-    clearTimeout(slowTimer);
+      body: JSON.stringify(formData)
+    });
 
     const result = await res.json();
 
-    if (result.error === "Duplicate request") {
-      dismissToast(activeToast);
-      showToast("Entry already saved.", "success");
-      setTimeout(resetFormAfterSuccess, 3000);
-      return;
+    if (activeToast) dismissToast(activeToast);
+
+    if (result.status === "success") {
+      showToast("Entry submitted successfully!", "success");
+      document.getElementById('modal').classList.add('active');
+      resetForm();
+    } else {
+      showToast(result.message || "Upload failed", "error");
     }
-
-    if (!res.ok || result.error) {
-      throw new Error(result.error || "Server error");
-    }
-
-    // Success
-    dismissToast(activeToast);
-    showToast("Entry saved successfully!", "success");
-
-    // modal AFTER toast finishes
-    setTimeout(resetFormAfterSuccess, 3000);
 
   } catch (err) {
-    dismissToast(activeToast);
-    clearTimeout(slowTimer);
-
-    if (err.message === "Upload timeout") {
-      showToast("Upload timed out. Please try again.", "error");
-    } else {
-      showToast(err.message || "Failed to upload entry", "error");
-    }
-
+    if (activeToast) dismissToast(activeToast);
+    showToast("Network error. Please try again.", "error");
     console.error(err);
-
   } finally {
     window.isUploading = false;
     submitBtn.disabled = false;
-    clearTimeout(slowTimer);
+    submitBtn.textContent = "Submit Entry";
   }
 }
 
+function resetForm() {
+  document.getElementById('date').value = '';
+  document.getElementById('volume').value = '';
+  document.getElementById('waste').value = '';
+  document.getElementById('photo').value = '';
 
+  const uploadDiv = document.querySelector('.photo-upload');
+  const img = uploadDiv.querySelector('img');
+  const placeholder = uploadDiv.querySelector('.placeholder');
 
+  if (img) img.remove();
+  if (placeholder) placeholder.style.display = 'block';
+  uploadDiv.classList.remove('has-image');
 
+  compressedImageBase64 = "";
+  document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+}
 
 function closeModal() {
   document.getElementById('modal').classList.remove('active');
@@ -475,7 +412,7 @@ async function loadHistory() {
   const from = document.getElementById('fromDate').value;
   const to = document.getElementById('toDate').value;
 
-  document.getElementById("exportBtn").disabled = true; // 👈 ADD THIS
+  document.getElementById("exportBtn").disabled = true;
 
   if (!from || !to) {
     showToast('Please select a date range', 'error');
@@ -505,7 +442,7 @@ async function loadHistory() {
   try {
     const res = await fetch(url);
     const rows = await res.json();
-    loadedRows = rows; // 👈 save for export
+    loadedRows = rows;
 
     document.getElementById('loading').style.display = 'none';
 
@@ -524,9 +461,7 @@ async function loadHistory() {
     }
 
     document.getElementById('table-container').style.display = 'block';
-    document.getElementById("exportBtn").disabled = false; // enable export
-
-
+    document.getElementById("exportBtn").disabled = false;
 
     rows.slice(1).forEach(r => {
       const date = new Date(r[0]).toLocaleDateString("en-US", {
@@ -534,7 +469,6 @@ async function loadHistory() {
         month: "long",
         day: "numeric"
       });
-
 
       let imageUrl = "";
       if (r[5]) {
@@ -548,37 +482,22 @@ async function loadHistory() {
         ? `<a class="photo-link" onclick="openImageModal('${imageUrl}')">View</a>`
         : '—';
 
-
-
       const tr = document.createElement("tr");
-            tr.innerHTML = `
-            <td>${date}</td>
-            <td>${r[1]}</td>
-            <td>${r[2]}</td>
-            <td>${r[4]}</td>
-            <td>${photoLink}</td>
-            `;
-            tbody.appendChild(tr);
-          });
+      tr.innerHTML = `
+        <td>${date}</td>
+        <td>${r[1]}</td>
+        <td>${r[2]}</td>
+        <td>${r[4]}</td>
+        <td>${photoLink}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
     showToast('Error loading data', 'error');
     console.error(err);
   }
 }
-
-// G Drive URL converter
-function convertDriveLink(url) {
-  if (!url) return "";
-
-  // Extract file ID
-  const match = url.match(/\/d\/([^/]+)/);
-  if (!match) return url;
-
-  const fileId = match[1];
-  return `https://drive.google.com/uc?id=${fileId}`;
-}
-
 
 // Export to XLSX
 async function exportExcel() {
@@ -589,31 +508,21 @@ async function exportExcel() {
     return;
   }
 
-  // UX: prevent spam clicking
   btn.disabled = true;
   btn.textContent = "Exporting...";
 
   try {
-    // Clone rows so we don’t modify original
     const rows = JSON.parse(JSON.stringify(loadedRows));
-
-    // Beautify header row
     rows[0] = ["Date", "Volume (kg)", "Waste Name", "Package", "User", "Photo Link", "System Timestamp"];
 
-    // Format dates
     for (let i = 1; i < rows.length; i++) {
-  rows[i][0] = new Date(rows[i][0]).toLocaleDateString("en-US");
-
-  // Format system timestamp (column G = index 6)
+      rows[i][0] = new Date(rows[i][0]).toLocaleDateString("en-US");
       if (rows[i][6]) {
         rows[i][6] = new Date(rows[i][6]).toLocaleString("en-US");
       }
     }
 
-
     const worksheet = XLSX.utils.aoa_to_sheet(rows);
-
-    // Auto column width
     worksheet["!cols"] = [
       { wch: 15 },
       { wch: 15 },
@@ -632,20 +541,16 @@ async function exportExcel() {
       .split("T")[0]}.xlsx`;
 
     XLSX.writeFile(workbook, filename);
-
     showToast("Excel exported successfully!", "success");
 
   } catch (err) {
     console.error(err);
     showToast("Export failed", "error");
   } finally {
-    // Restore button
     btn.disabled = false;
     btn.textContent = "Export to Excel (XLSX)";
   }
 }
-
-
 
 // Parse JWT token
 function parseJwt(token) {
@@ -657,37 +562,76 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
+// Display user info in header
+function displayUserInfo(name, role) {
+  const userInfo = document.getElementById('user-info');
+  const userName = document.getElementById('user-name');
+  const roleBadge = document.getElementById('user-role-badge');
+  
+  if (userInfo && userName && roleBadge) {
+    userName.textContent = name;
+    roleBadge.textContent = role;
+    
+    if (role === 'admin') {
+      roleBadge.classList.add('admin');
+    }
+    
+    userInfo.style.display = 'block';
+  }
+}
+
+// Logout function
+function logout() {
+  if (confirm('Are you sure you want to sign out?')) {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userRole');
+    document.body.classList.remove('is-admin');
+    
+    // Hide user info
+    const userInfo = document.getElementById('user-info');
+    if (userInfo) userInfo.style.display = 'none';
+    
+    // Reset to login screen
+    showSection('login-section');
+    showToast('Signed out successfully', 'info');
+    
+    // Reload to reset Google Sign-In
+    setTimeout(() => location.reload(), 1000);
+  }
+}
+
 // Google login handler
 async function handleCredentialResponse(response) {
-  setLoginLoading(true);   // ✅ start spinner ONLY after click
+  setLoginLoading(true);
 
   const responsePayload = parseJwt(response.credential);
   const email = responsePayload.email.toLowerCase();
+  const name = responsePayload.name;
 
   try {
     const checkURL = `${scriptURL}?email=${encodeURIComponent(email)}`;
     const res = await fetch(checkURL);
     const data = await res.json();
 
-    setLoginLoading(false); // stop spinner
+    setLoginLoading(false);
 
-  if (data.status === "Approved") {
-  localStorage.setItem("userToken", data.token);
-  localStorage.setItem("userRole", data.role || "user"); // 👈 NEW
+    if (data.status === "Approved") {
+      localStorage.setItem("userToken", data.token);
+      localStorage.setItem("userRole", data.role || "user");
 
-  showSection("package-section");
-  showToast(`Welcome, ${responsePayload.name}!`, "success");
+      // Display user info in header
+      displayUserInfo(name, data.role || "user");
 
-  // 👇 show admin UI if admin
-  if (data.role === "admin") {
-    enableAdminUI();
+      showSection("package-section");
+      showToast(`Welcome, ${name}!`, "success");
+
+      // Enable admin UI if admin
+      if (data.role === "admin") {
+        enableAdminUI();
       }
-  }
-
-    else if (data.status === "Rejected") {
+    } else if (data.status === "Rejected") {
       showToast("Access denied by admin", "error");
-    } 
-    else {
+    } else {
       showToast("Awaiting admin approval", "info");
     }
 
@@ -698,29 +642,16 @@ async function handleCredentialResponse(response) {
   }
 }
 
-
-
-
-
-
 // Initialize
 window.onload = function() {
-
   if (DEV_MODE) {
     console.warn('⚠️ DEV MODE ENABLED');
-
-    // Fake valid session
     localStorage.setItem("userToken", "DEV_TOKEN");
-
-    // Force UI state
     document.querySelectorAll('.section')
       .forEach(s => s.classList.remove('active'));
-
     document.getElementById('package-section').classList.add('active');
-
     showToast('Dev mode active - Auth bypassed', 'info');
-
-    return; // ⛔ STOP here, do NOT run Google code
+    return;
   }
 
   // NORMAL MODE (Google Sign-In)
@@ -742,13 +673,11 @@ window.onload = function() {
   }
 };
 
-
-// modal function
+// Modal functions
 function openImageModal(url) {
   const modal = document.getElementById("imageModal");
   const img = document.getElementById("modalImage");
 
-  // Extract file ID from any Drive link
   const match = url.match(/[-\w]{25,}/);
   if (!match) {
     showToast("Invalid image link", "error");
@@ -756,14 +685,11 @@ function openImageModal(url) {
   }
 
   const fileId = match[0];
-
-  // Thumbnail URL (Drive allows this)
   const directUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
 
   img.src = directUrl;
   modal.style.display = "flex";
 }
-
 
 function closeImageModal() {
   const modal = document.getElementById("imageModal");
@@ -777,6 +703,3 @@ function enableAdminUI() {
   document.body.classList.add("is-admin");
   console.log("Admin mode enabled");
 }
-
-
-
