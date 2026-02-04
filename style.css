@@ -628,3 +628,21 @@ td a.photo-link {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.admin-only {
+  display: none;
+}
+
+.is-admin .admin-only {
+  display: block;
+}
+
+#admin-section table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#admin-section th, #admin-section td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
