@@ -1012,6 +1012,7 @@ async function handleCredentialResponse(response) {
     if (data.status === "Approved") {
       localStorage.setItem("userToken", data.token);
       localStorage.setItem("userRole", data.role || "user");
+      localStorage.setItem("userEmail", email);
 
       // Display user info in header
       displayUserInfo(name, data.role || "user");
