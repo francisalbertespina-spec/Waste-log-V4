@@ -9,7 +9,7 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbzHCTrum-9baAx-HfUwccrQERftL5jpLUwxD-TxVLQnk49b96uUzdilFz0jDYfQX8WT/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbxMN4txNU7LHTdVLRI-EqbAaj-cihydLSrCees7NLJCKk60APcrDYw_T0V358BSRXJN/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
@@ -191,18 +191,65 @@ function renderUsers(users) {
   const tbody = document.getElementById("usersTableBody");
   tbody.innerHTML = "";
 
+  if (!users || users.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+          No users found
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   users.forEach(u => {
     const tr = document.createElement("tr");
+    
+    // Status dropdown
+    const statusOptions = ['Pending', 'Approved', 'Rejected'];
+    const statusSelect = `
+      <select class="admin-select status-select" 
+              onchange="updateUserStatus('${u.email}', this.value)"
+              ${u.status === 'Pending' ? '' : ''}>
+        ${statusOptions.map(opt => 
+          `<option value="${opt}" ${u.status === opt ? 'selected' : ''}>${opt}</option>`
+        ).join('')}
+      </select>
+    `;
+    
+    // Role dropdown
+    const roleOptions = ['user', 'admin'];
+    const roleSelect = `
+      <select class="admin-select role-select" 
+              onchange="updateUserRole('${u.email}', this.value)"
+              ${u.status !== 'Approved' ? 'disabled' : ''}>
+        ${roleOptions.map(opt => 
+          `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${opt}</option>`
+        ).join('')}
+      </select>
+    `;
+    
+    // Action buttons
+    const actions = u.status === 'Pending' 
+      ? `
+        <button class="btn-action btn-approve" onclick="quickApprove('${u.email}')">
+          ✓ Approve
+        </button>
+        <button class="btn-action btn-reject" onclick="quickReject('${u.email}')">
+          ✗ Reject
+        </button>
+      `
+      : `
+        <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">
+          🗑️ Delete
+        </button>
+      `;
+    
     tr.innerHTML = `
       <td style="text-align: left;">${u.email}</td>
-      <td>${u.status}</td>
-      <td>${u.role || "user"}</td>
-      <td>
-        ${u.status === "Pending" ? `
-          <button onclick="approveUser('${u.email}')">Approve</button>
-          <button onclick="rejectUser('${u.email}')">Reject</button>
-        ` : "—"}
-      </td>
+      <td>${statusSelect}</td>
+      <td>${roleSelect}</td>
+      <td class="action-cell">${actions}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -222,6 +269,80 @@ async function rejectUser(email) {
   await fetch(`${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
   loadUsers();
   showToast("User rejected", "success");
+}
+
+// Quick approve (for pending users)
+async function quickApprove(email) {
+  await updateUserStatus(email, 'Approved');
+}
+
+// Quick reject (for pending users)
+async function quickReject(email) {
+  await updateUserStatus(email, 'Rejected');
+}
+
+// Update user status
+async function updateUserStatus(email, status) {
+  try {
+    const action = status === 'Approved' ? 'approveUser' : 
+                   status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
+    
+    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (data.success || data.status === 'success') {
+      showToast(`User status updated to ${status}`, "success");
+      loadUsers();
+    } else {
+      showToast(data.message || "Failed to update status", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Error updating user status", "error");
+  }
+}
+
+// Update user role
+async function updateUserRole(email, role) {
+  try {
+    const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}&token=${localStorage.getItem("userToken")}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (data.success || data.status === 'success') {
+      showToast(`User role updated to ${role}`, "success");
+      loadUsers();
+    } else {
+      showToast(data.message || "Failed to update role", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Error updating user role", "error");
+  }
+}
+
+// Delete user
+async function deleteUser(email) {
+  if (!confirm(`Are you sure you want to delete user: ${email}?\n\nThis action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    const url = `${scriptURL}?action=deleteUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (data.success || data.status === 'success') {
+      showToast("User deleted successfully", "success");
+      loadUsers();
+    } else {
+      showToast(data.message || "Failed to delete user", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Error deleting user", "error");
+  }
 }
 
 async function loadRequests() {
@@ -602,7 +723,9 @@ function displayUserInfo(name, role) {
       // Show mode toggle for admins
       if (modeToggle) {
         modeToggle.style.display = 'flex';
-        updateModeLabels(false); // Start in user mode
+        // Initialize to user mode (false = user mode)
+        // This only runs once at login, won't affect navigation
+        updateModeLabels(false);
       }
     }
     
