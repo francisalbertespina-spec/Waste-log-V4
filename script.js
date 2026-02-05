@@ -11,6 +11,81 @@ const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
 
+async function stampImageWithWatermark(file, userEmail, selectedPackage) {
+  return new Promise((resolve, reject) => {
+
+    if (!navigator.geolocation) {
+      alert("GPS not supported");
+      return reject("No GPS");
+    }
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          ctx.drawImage(img, 0, 0);
+
+          const now = new Date();
+          const pad = n => String(n).padStart(2, "0");
+          const timestamp =
+            now.getFullYear() + "-" +
+            pad(now.getMonth() + 1) + "-" +
+            pad(now.getDate()) + " " +
+            pad(now.getHours()) + ":" +
+            pad(now.getMinutes());
+
+          const watermarkText = `HDJV ENVI UNIT
+${timestamp}
+Lat: ${lat.toFixed(4)}  Lng: ${lng.toFixed(4)}
+User: ${userEmail}
+Pkg: ${selectedPackage}`;
+
+          const lines = watermarkText.split("\n");
+
+          const boxHeight = lines.length * 28 + 20;
+
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+
+          ctx.fillStyle = "white";
+          ctx.font = "22px Arial";
+          ctx.textBaseline = "top";
+
+          lines.forEach((line, i) => {
+            ctx.fillText(line, 10, canvas.height - boxHeight + 10 + i * 28);
+          });
+
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+
+        img.src = reader.result;
+      };
+
+      reader.readAsDataURL(file);
+
+    }, err => {
+      alert("GPS permission is required.");
+      reject(err);
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000
+    });
+
+  });
+}
+
+
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
   toastQueue.push({ message, type, persistent, spinner, duration });
@@ -482,27 +557,61 @@ async function previewImage(event) {
 
   ctx.drawImage(imageBitmap, 0, 0);
 
-  let text = new Date().toLocaleString();
+  // Format timestamp
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const timestamp =
+    now.getFullYear() + "-" +
+    pad(now.getMonth() + 1) + "-" +
+    pad(now.getDate()) + " " +
+    pad(now.getHours()) + ":" +
+    pad(now.getMinutes());
+
+  let latText = "N/A";
+  let lngText = "N/A";
 
   try {
     const pos = await new Promise((resolve, reject) =>
-      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        timeout: 8000,
+        enableHighAccuracy: true
+      })
     );
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    text += ` | ${lat}, ${lng}`;
+    latText = pos.coords.latitude.toFixed(4);
+    lngText = pos.coords.longitude.toFixed(4);
   } catch (e) {
-    text += " | GPS unavailable";
+    console.warn("GPS unavailable", e);
   }
 
+  const watermarkText = [
+    "HDJV ENVI UNIT",
+    timestamp,
+    `Lat: ${latText} Lng: ${lngText}`,
+    `User: ${currentUserEmail}`,
+    `Pkg: ${selectedPackage}`
+  ];
+
+  const lineHeight = 36;
+  const boxHeight = watermarkText.length * lineHeight + 20;
+
+  // Background box
   ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+  ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
 
+  // Text
   ctx.fillStyle = "white";
-  ctx.font = "40px Arial";
-  ctx.fillText(text, 20, canvas.height - 20);
+  ctx.font = "28px Arial";
+  ctx.textBaseline = "top";
 
-  const finalImage = canvas.toDataURL("image/jpeg", 0.8);
+  watermarkText.forEach((line, i) => {
+    ctx.fillText(
+      line,
+      15,
+      canvas.height - boxHeight + 10 + i * lineHeight
+    );
+  });
+
+  const finalImage = canvas.toDataURL("image/jpeg", 0.85);
 
   compressedImageBase64 = finalImage;
   img.src = finalImage;
@@ -510,6 +619,7 @@ async function previewImage(event) {
   uploadDiv.classList.add("has-image");
   if (placeholder) placeholder.style.display = "none";
 }
+
 
 
 
