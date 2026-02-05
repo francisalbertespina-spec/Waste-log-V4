@@ -602,7 +602,7 @@ function displayUserInfo(name, role) {
       // Show mode toggle for admins
       if (modeToggle) {
         modeToggle.style.display = 'flex';
-        updateModeLabels(false); // Start in user mode
+        
       }
     }
     
@@ -615,15 +615,15 @@ function toggleAdminMode() {
   const toggle = document.getElementById('admin-mode-toggle');
   const isAdminMode = toggle.checked;
 
-  updateModeLabels(isAdminMode);
-
   if (isAdminMode) {
-    // DO NOT auto-load tables
     showSection('admin-dashboard');
+    showToast('Switched to Admin mode', 'info');
   } else {
     showSection('package-section');
+    showToast('Switched to User mode', 'info');
   }
 }
+
 
 
 // Update mode label highlighting
@@ -646,13 +646,19 @@ function updateModeLabels(isAdminMode) {
 function updateToggleState(sectionId) {
   const toggle = document.getElementById('admin-mode-toggle');
   if (!toggle) return;
-  
-  const adminSections = ['user-management-section', 'request-logs-section'];
+
+  const adminSections = [
+    'admin-dashboard',
+    'user-management-section',
+    'request-logs-section'
+  ];
+
   const isAdminSection = adminSections.includes(sectionId);
-  
+
   toggle.checked = isAdminSection;
   updateModeLabels(isAdminSection);
 }
+
 
 // Logout function
 function logout() {
