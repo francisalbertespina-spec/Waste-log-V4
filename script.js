@@ -551,64 +551,57 @@ async function previewImage(event) {
   const imageBitmap = await createImageBitmap(file);
 
   const canvas = document.createElement("canvas");
-  canvas.width = imageBitmap.width;
-  canvas.height = imageBitmap.height;
+
+  // 🔽 Resize for sanity (optional but safe)
+  const MAX_WIDTH = 1280;
+  let width = imageBitmap.width;
+  let height = imageBitmap.height;
+
+  if (width > MAX_WIDTH) {
+    height = height * (MAX_WIDTH / width);
+    width = MAX_WIDTH;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+
   const ctx = canvas.getContext("2d");
+  ctx.drawImage(imageBitmap, 0, 0, width, height);
 
-  ctx.drawImage(imageBitmap, 0, 0);
+  // 📌 Build watermark text
+  const email = localStorage.getItem("userEmail") || "unknown";
+  const pkg = selectedPackage || "N/A";
 
-  // Format timestamp
-  const now = new Date();
-  const pad = n => String(n).padStart(2, "0");
-  const timestamp =
-    now.getFullYear() + "-" +
-    pad(now.getMonth() + 1) + "-" +
-    pad(now.getDate()) + " " +
-    pad(now.getHours()) + ":" +
-    pad(now.getMinutes());
-
-  let latText = "N/A";
-  let lngText = "N/A";
+  let text = `HDJV ENVI UNIT\n`;
+  text += `${new Date().toLocaleString()}\n`;
 
   try {
     const pos = await new Promise((resolve, reject) =>
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        timeout: 8000,
-        enableHighAccuracy: true
-      })
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
     );
-    latText = pos.coords.latitude.toFixed(4);
-    lngText = pos.coords.longitude.toFixed(4);
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    text += `Lat: ${lat} Lng: ${lng}\n`;
   } catch (e) {
-    console.warn("GPS unavailable", e);
+    text += `Lat: N/A Lng: N/A\n`;
   }
 
-  const watermarkText = [
-    "HDJV ENVI UNIT",
-    timestamp,
-    `Lat: ${latText} Lng: ${lngText}`,
-    `User: ${currentUserEmail}`,
-    `Pkg: ${selectedPackage}`
-  ];
+  text += `User: ${email}\nPkg: ${pkg}`;
 
-  const lineHeight = 36;
-  const boxHeight = watermarkText.length * lineHeight + 20;
+  // 🖤 Background bar
+  const lines = text.split("\n");
+  const lineHeight = 40;
+  const padding = 20;
+  const boxHeight = lines.length * lineHeight + padding * 2;
 
-  // Background box
   ctx.fillStyle = "rgba(0,0,0,0.6)";
   ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
 
-  // Text
+  // ✍️ Draw text
   ctx.fillStyle = "white";
-  ctx.font = "28px Arial";
-  ctx.textBaseline = "top";
-
-  watermarkText.forEach((line, i) => {
-    ctx.fillText(
-      line,
-      15,
-      canvas.height - boxHeight + 10 + i * lineHeight
-    );
+  ctx.font = "32px Arial";
+  lines.forEach((line, i) => {
+    ctx.fillText(line, 20, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
   });
 
   const finalImage = canvas.toDataURL("image/jpeg", 0.85);
