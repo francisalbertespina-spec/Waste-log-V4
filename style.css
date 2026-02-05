@@ -1300,3 +1300,133 @@ td a.photo-link {
   font-style: italic;
 }
 
+/* new */
+/* ===============================================
+   MOBILE FIX FOR ADMIN TABLE
+   Add this to the END of your style.css
+   This will make the table scroll horizontally on mobile
+   =============================================== */
+
+/* Wrap admin table in scrollable container */
+.admin-block {
+  margin-top: 30px;
+  overflow-x: auto; /* Enable horizontal scroll */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+.admin-block:first-of-type {
+  margin-top: 0;
+}
+
+/* Make table have minimum width on mobile */
+.admin-table {
+  width: 100%;
+  min-width: 650px; /* Ensure table doesn't collapse too much */
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  table-layout: fixed;
+}
+
+/* Adjust for very small screens */
+@media (max-width: 768px) {
+  .admin-card {
+    padding: 20px 15px;
+  }
+  
+  .admin-table {
+    min-width: 600px; /* Slightly smaller minimum */
+    font-size: 0.8rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+  
+  /* Smaller dropdowns on mobile */
+  .admin-select {
+    max-width: 100%;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    padding-right: 28px;
+  }
+  
+  /* Smaller buttons on mobile */
+  .btn-action {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    gap: 3px;
+  }
+  
+  /* Stack refresh button on mobile */
+  .admin-block-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .admin-block-header .btn-sm {
+    width: 100%;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 480px) {
+  .admin-table {
+    min-width: 550px; /* Even smaller but still scrollable */
+    font-size: 0.75rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .admin-select {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    padding-right: 24px;
+  }
+  
+  .btn-action {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+  
+  /* Reduce card padding more */
+  .admin-card {
+    padding: 15px 10px;
+  }
+}
+
+/* Add scroll hint shadow for mobile */
+@media (max-width: 768px) {
+  .admin-block {
+    position: relative;
+  }
+  
+  /* Show a subtle shadow on right edge to indicate scrollability */
+  .admin-block::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to left, rgba(0,0,0,0.1), transparent);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s;
+  }
+  
+  /* Hide shadow when scrolled to end */
+  .admin-block.scrolled-end::after {
+    opacity: 0;
+  }
+}
