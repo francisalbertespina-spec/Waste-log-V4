@@ -459,27 +459,53 @@ function compressImage(file) {
 }
 
 // Image preview
-async function previewImage(event) {
+function previewImage(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const uploadDiv = document.querySelector('.photo-upload');
-  const placeholder = uploadDiv.querySelector('.placeholder');
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+      const now = new Date().toLocaleString();
 
-  let img = uploadDiv.querySelector("img");
-  if (!img) {
-    img = document.createElement("img");
-    img.className = "photo-preview";
-    uploadDiv.appendChild(img);
-  }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
 
-  const compressedBase64 = await compressImage(file);
-  compressedImageBase64 = compressedBase64;
-  img.src = compressedBase64;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
 
-  uploadDiv.classList.add("has-image");
-  if (placeholder) placeholder.style.display = "none";
+          // Watermark style
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(0, canvas.height - 120, canvas.width, 120);
+
+          ctx.fillStyle = "#00ff00";
+          ctx.font = "28px Arial";
+          ctx.fillText(`Time: ${now}`, 20, canvas.height - 70);
+          ctx.fillText(`GPS: ${lat}, ${lng}`, 20, canvas.height - 30);
+
+          // Convert back to image
+          const stampedImage = canvas.toDataURL("image/jpeg", 0.85);
+
+          document.getElementById("photoPreview").src = stampedImage;
+          compressedImageBase64 = stampedImage.split(",")[1];
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+    () => {
+      alert("GPS permission required to take photo.");
+    },
+    { enableHighAccuracy: true }
+  );
 }
+
 
 // Form validation
 function validateForm() {
