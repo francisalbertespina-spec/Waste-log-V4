@@ -9,7 +9,8 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
+//const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
 
 async function stampImageWithWatermark(file, userEmail, selectedPackage) {
   return new Promise((resolve, reject) => {
