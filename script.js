@@ -459,52 +459,58 @@ function compressImage(file) {
 }
 
 // Image preview
-function previewImage(event) {
+async function previewImage(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const lat = position.coords.latitude.toFixed(6);
-      const lng = position.coords.longitude.toFixed(6);
-      const now = new Date().toLocaleString();
+  const uploadDiv = document.querySelector('.photo-upload');
+  const placeholder = uploadDiv.querySelector('.placeholder');
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
+  let img = uploadDiv.querySelector("img");
+  if (!img) {
+    img = document.createElement("img");
+    img.className = "photo-preview";
+    uploadDiv.appendChild(img);
+  }
 
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
+  const imageBitmap = await createImageBitmap(file);
 
-          // Watermark style
-          ctx.fillStyle = "rgba(0,0,0,0.6)";
-          ctx.fillRect(0, canvas.height - 120, canvas.width, 120);
+  const canvas = document.createElement("canvas");
+  canvas.width = imageBitmap.width;
+  canvas.height = imageBitmap.height;
+  const ctx = canvas.getContext("2d");
 
-          ctx.fillStyle = "#00ff00";
-          ctx.font = "28px Arial";
-          ctx.fillText(`Time: ${now}`, 20, canvas.height - 70);
-          ctx.fillText(`GPS: ${lat}, ${lng}`, 20, canvas.height - 30);
+  ctx.drawImage(imageBitmap, 0, 0);
 
-          // Convert back to image
-          const stampedImage = canvas.toDataURL("image/jpeg", 0.85);
+  let text = new Date().toLocaleString();
 
-          document.getElementById("photoPreview").src = stampedImage;
-          compressedImageBase64 = stampedImage.split(",")[1];
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    },
-    () => {
-      alert("GPS permission required to take photo.");
-    },
-    { enableHighAccuracy: true }
-  );
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+    );
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    text += ` | ${lat}, ${lng}`;
+  } catch (e) {
+    text += " | GPS unavailable";
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+  ctx.fillStyle = "white";
+  ctx.font = "40px Arial";
+  ctx.fillText(text, 20, canvas.height - 20);
+
+  const finalImage = canvas.toDataURL("image/jpeg", 0.8);
+
+  compressedImageBase64 = finalImage;
+  img.src = finalImage;
+
+  uploadDiv.classList.add("has-image");
+  if (placeholder) placeholder.style.display = "none";
 }
+
 
 
 // Form validation
@@ -521,6 +527,8 @@ function validateForm() {
   return true;
 }
 
+
+// add entry
 async function addEntry() {
   const dateField = document.getElementById("date");
   const volumeField = document.getElementById("volume");
