@@ -209,8 +209,8 @@ function renderUsers(users) {
     const statusOptions = ['Pending', 'Approved', 'Rejected'];
     const statusSelect = `
       <select class="admin-select status-select" 
-              onchange="updateUserStatus('${u.email}', this.value)"
-              ${u.status === 'Pending' ? '' : ''}>
+              value="${u.status}"
+              onchange="updateUserStatus('${u.email}', this.value)">
         ${statusOptions.map(opt => 
           `<option value="${opt}" ${u.status === opt ? 'selected' : ''}>${opt}</option>`
         ).join('')}
@@ -219,15 +219,15 @@ function renderUsers(users) {
     
     // Role dropdown
     const roleOptions = ['user', 'admin'];
-        const roleSelect = `
+    const roleSelect = `
       <select class="admin-select role-select" 
+              value="${u.role || 'user'}"
               onchange="updateUserRole('${u.email}', this.value)">
         ${roleOptions.map(opt => 
-          `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${opt}</option>`
+          `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
         ).join('')}
       </select>
     `;
-
     
     // Action buttons
     const actions = u.status === 'Pending' 
@@ -253,7 +253,26 @@ function renderUsers(users) {
     `;
     tbody.appendChild(tr);
   });
+  
+  // Apply dynamic styling to all dropdowns after rendering
+  applyDropdownStyling();
 }
+
+//dropdownnstyling
+function applyDropdownStyling() {
+  // Style status dropdowns based on selected value
+  document.querySelectorAll('.status-select').forEach(select => {
+    const value = select.value;
+    select.setAttribute('value', value); // Set attribute for CSS selector
+  });
+  
+  // Style role dropdowns based on selected value
+  document.querySelectorAll('.role-select').forEach(select => {
+    const value = select.value;
+    select.setAttribute('value', value); // Set attribute for CSS selector
+  });
+}
+
 
 async function approveUser(email) {
   if (!confirm("Approve this user?")) return;
@@ -282,21 +301,41 @@ async function quickReject(email) {
 }
 
 // Update user status
-async function updateUserStatus(email, status) {
+sync function updateUserStatus(email, status) {
   try {
-    const url = `${scriptURL}?action=updateUserStatus&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
+    console.log('Updating status:', email, status);
+    
+    const action = status === 'Approved' ? 'approveUser' : 
+                   status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
+    
+    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
+    
+    // Show loading state
+    const select = event?.target;
+    if (select) {
+      select.classList.add('loading');
+      select.disabled = true;
+    }
+    
     const res = await fetch(url);
     const data = await res.json();
     
-    if (data.success) {
+    if (select) {
+      select.classList.remove('loading');
+      select.disabled = false;
+    }
+    
+    if (data.success || data.status === 'success') {
       showToast(`User status updated to ${status}`, "success");
       loadUsers();
     } else {
       showToast(data.message || "Failed to update status", "error");
+      loadUsers(); // Reload to reset dropdown
     }
   } catch (err) {
     console.error(err);
     showToast("Error updating user status", "error");
+    loadUsers(); // Reload to reset dropdown
   }
 }
 
@@ -304,19 +343,36 @@ async function updateUserStatus(email, status) {
 // Update user role
 async function updateUserRole(email, role) {
   try {
+    console.log('Updating role:', email, role);
+    
     const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}&token=${localStorage.getItem("userToken")}`;
+    
+    // Show loading state
+    const select = event?.target;
+    if (select) {
+      select.classList.add('loading');
+      select.disabled = true;
+    }
+    
     const res = await fetch(url);
     const data = await res.json();
+    
+    if (select) {
+      select.classList.remove('loading');
+      select.disabled = false;
+    }
     
     if (data.success || data.status === 'success') {
       showToast(`User role updated to ${role}`, "success");
       loadUsers();
     } else {
       showToast(data.message || "Failed to update role", "error");
+      loadUsers(); // Reload to reset dropdown
     }
   } catch (err) {
     console.error(err);
-    showToast("Error updating user role", "error");
+    showToast("Error updating user role: " + err.message, "error");
+    loadUsers(); // Reload to reset dropdown
   }
 }
 
