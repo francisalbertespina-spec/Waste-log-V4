@@ -1017,6 +1017,100 @@ body.is-admin .section.admin-only.active {
   color: white;
 }
 
+/* Admin Select Dropdowns */
+.admin-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-select:hover {
+  border-color: #d32f2f;
+}
+
+.admin-select:focus {
+  outline: none;
+  border-color: #d32f2f;
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+}
+
+.admin-select:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.status-select option[value="Approved"] {
+  color: #4caf50;
+}
+
+.status-select option[value="Rejected"] {
+  color: #f44336;
+}
+
+.status-select option[value="Pending"] {
+  color: #ff9800;
+}
+
+/* Action Buttons */
+.action-cell {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-approve {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-approve:hover {
+  background: #45a049;
+}
+
+.btn-reject {
+  background: #f44336;
+  color: white;
+}
+
+.btn-reject:hover {
+  background: #da190b;
+}
+
+.btn-delete {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #fb8c00;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
   .package-grid {
