@@ -900,9 +900,15 @@ td a.photo-link {
   display: none;
 }
 
+/* Admin sections still follow section navigation */
 body.is-admin .admin-only {
+  display: none;
+}
+
+body.is-admin .section.admin-only.active {
   display: block;
 }
+
 
 .admin-card {
   background: #ffffff;
