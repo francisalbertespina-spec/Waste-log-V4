@@ -9,7 +9,7 @@ window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbyFr_neafwa6_dfrK-eWTv_xqN_MISJqBq8vSpTuKznk1SdplkVYBZY72wLb5KKAi-4/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbxDEhVsVb4Zrol_32MUbR3YHXJ6Ai2JQFKphZ9UnG_oHULrjoC1JftOCYZUlTX24fRn/exec";
 
 function showToast(message, type = "info", options = {}) {
   const { persistent = false, spinner = false, duration = 3000 } = options;
