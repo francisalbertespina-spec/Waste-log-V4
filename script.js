@@ -602,7 +602,7 @@ function displayUserInfo(name, role) {
       // Show mode toggle for admins
       if (modeToggle) {
         modeToggle.style.display = 'flex';
-        
+        updateModeLabels(false); // Start in user mode
       }
     }
     
