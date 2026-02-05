@@ -301,7 +301,7 @@ async function quickReject(email) {
 }
 
 // Update user status
-sync function updateUserStatus(email, status) {
+async function updateUserStatus(email, status) {
   try {
     console.log('Updating status:', email, status);
     
