@@ -219,15 +219,15 @@ function renderUsers(users) {
     
     // Role dropdown
     const roleOptions = ['user', 'admin'];
-    const roleSelect = `
+        const roleSelect = `
       <select class="admin-select role-select" 
-              onchange="updateUserRole('${u.email}', this.value)"
-              ${u.status !== 'Approved' ? 'disabled' : ''}>
+              onchange="updateUserRole('${u.email}', this.value)">
         ${roleOptions.map(opt => 
           `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${opt}</option>`
         ).join('')}
       </select>
     `;
+
     
     // Action buttons
     const actions = u.status === 'Pending' 
@@ -284,14 +284,11 @@ async function quickReject(email) {
 // Update user status
 async function updateUserStatus(email, status) {
   try {
-    const action = status === 'Approved' ? 'approveUser' : 
-                   status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
-    
-    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
+    const url = `${scriptURL}?action=updateUserStatus&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
     const res = await fetch(url);
     const data = await res.json();
     
-    if (data.success || data.status === 'success') {
+    if (data.success) {
       showToast(`User status updated to ${status}`, "success");
       loadUsers();
     } else {
@@ -302,6 +299,7 @@ async function updateUserStatus(email, status) {
     showToast("Error updating user status", "error");
   }
 }
+
 
 // Update user role
 async function updateUserRole(email, role) {
