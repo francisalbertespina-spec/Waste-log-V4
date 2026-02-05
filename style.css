@@ -895,67 +895,9 @@ td a.photo-link {
   margin-right: 8px;
 }
 
-/* ================= ADMIN PANEL ================= */
-.admin-only {
-  display: none;
-}
+/* ================= IMPROVED ADMIN DASHBOARD STYLES ================= */
 
-/* Admin sections still follow section navigation */
-body.is-admin .admin-only {
-  display: none;
-}
-
-body.is-admin .section.admin-only.active {
-  display: block;
-}
-
-
-.admin-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.admin-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.admin-header h2 {
-  color: #333;
-  margin-bottom: 8px;
-  font-size: 1.5rem;
-}
-
-.admin-header p {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.admin-block {
-  margin-top: 30px;
-}
-
-.admin-block:first-of-type {
-  margin-top: 0;
-}
-
-.admin-block h3 {
-  font-size: 1.1rem;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.admin-block-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
+/* Admin Table - Better Layout */
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -964,23 +906,60 @@ body.is-admin .section.admin-only.active {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #e0e0e0;
+  table-layout: fixed; /* Fixed layout for better control */
 }
 
 .admin-table th {
   background: #f8f9fa;
   color: #555;
-  padding: 12px;
-  font-size: 0.85rem;
+  padding: 14px 10px;
+  font-size: 0.9rem;
   font-weight: 700;
   text-align: left;
   border-bottom: 2px solid #e0e0e0;
+  white-space: nowrap;
 }
 
 .admin-table td {
-  padding: 12px;
+  padding: 14px 10px;
   border-bottom: 1px solid #f0f0f0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #333;
+  vertical-align: middle;
+}
+
+/* Column Widths for Better Display */
+.admin-table th:nth-child(1),
+.admin-table td:nth-child(1) {
+  width: 35%; /* Email column - wider */
+  min-width: 180px;
+}
+
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2) {
+  width: 22%; /* Status column */
+  min-width: 120px;
+}
+
+.admin-table th:nth-child(3),
+.admin-table td:nth-child(3) {
+  width: 18%; /* Role column */
+  min-width: 100px;
+}
+
+.admin-table th:nth-child(4),
+.admin-table td:nth-child(4) {
+  width: 25%; /* Action column */
+  min-width: 140px;
+  text-align: center;
+}
+
+/* Email Cell - Prevent Line Breaks */
+.admin-table td:nth-child(1) {
+  word-break: break-all; /* Break long emails at any point */
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.85rem;
 }
 
 .admin-table tr:last-child td {
@@ -991,149 +970,333 @@ body.is-admin .section.admin-only.active {
   background: #f8f9fa;
 }
 
-.admin-table button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.admin-table button:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-
-.admin-table button:first-child {
-  background: #4caf50;
-  color: white;
-  margin-right: 5px;
-}
-
-.admin-table button:last-child {
-  background: #f44336;
-  color: white;
-}
-
-/* Admin Select Dropdowns */
+/* Admin Select Dropdowns - IMPROVED VISIBILITY */
 .admin-select {
   width: 100%;
-  padding: 6px 10px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  max-width: 140px;
+  padding: 8px 12px;
+  border: 2px solid #d0d0d0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600; /* Bold text for better visibility */
   background: white;
   cursor: pointer;
   transition: all 0.2s;
+  color: #333; /* Darker default color */
+  appearance: none; /* Remove default arrow */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
 }
 
 .admin-select:hover {
   border-color: #d32f2f;
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
 }
 
 .admin-select:focus {
   outline: none;
   border-color: #d32f2f;
-  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
 }
 
 .admin-select:disabled {
   background: #f5f5f5;
   cursor: not-allowed;
   opacity: 0.6;
+  color: #999;
 }
 
+/* Status Select - Color Coded */
+.status-select {
+  font-weight: 700;
+}
+
+.status-select option {
+  font-weight: 700;
+  padding: 10px;
+}
+
+/* Make options more visible with background colors */
 .status-select option[value="Approved"] {
-  color: #4caf50;
+  color: #2e7d32; /* Dark green */
+  background: #e8f5e9;
 }
 
 .status-select option[value="Rejected"] {
-  color: #f44336;
+  color: #c62828; /* Dark red */
+  background: #ffebee;
 }
 
 .status-select option[value="Pending"] {
-  color: #ff9800;
+  color: #f57c00; /* Dark orange */
+  background: #fff3e0;
 }
 
-/* Action Buttons */
+/* Dynamic coloring based on selected value */
+.status-select[value="Approved"] {
+  color: #2e7d32;
+  border-color: #4caf50;
+  background-color: #f1f8f4;
+}
+
+.status-select[value="Rejected"] {
+  color: #c62828;
+  border-color: #f44336;
+  background-color: #fff5f5;
+}
+
+.status-select[value="Pending"] {
+  color: #f57c00;
+  border-color: #ff9800;
+  background-color: #fffaf0;
+}
+
+/* Role Select - Color Coded */
+.role-select {
+  font-weight: 600;
+}
+
+.role-select option {
+  font-weight: 600;
+  padding: 10px;
+}
+
+.role-select option[value="admin"] {
+  color: #d32f2f;
+  background: #fff9e6;
+}
+
+.role-select option[value="user"] {
+  color: #1976d2;
+  background: #e3f2fd;
+}
+
+/* Dynamic coloring for role select */
+.role-select[value="admin"] {
+  color: #d32f2f;
+  border-color: #d32f2f;
+  background-color: #fffbf0;
+}
+
+.role-select[value="user"] {
+  color: #1976d2;
+  border-color: #1976d2;
+  background-color: #f0f7ff;
+}
+
+/* Action Buttons - Improved */
 .action-cell {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
 }
 
 .btn-action {
-  padding: 6px 12px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-action:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn-action:active {
+  transform: translateY(0);
 }
 
 .btn-approve {
-  background: #4caf50;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   color: white;
 }
 
 .btn-approve:hover {
-  background: #45a049;
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
 }
 
 .btn-reject {
-  background: #f44336;
+  background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
   color: white;
 }
 
 .btn-reject:hover {
-  background: #da190b;
+  background: linear-gradient(135deg, #da190b 0%, #c41700 100%);
 }
 
 .btn-delete {
-  background: #ff9800;
+  background: linear-gradient(135deg, #ff9800 0%, #fb8c00 100%);
   color: white;
 }
 
 .btn-delete:hover {
-  background: #fb8c00;
+  background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
-  .package-grid {
-    grid-template-columns: 1fr;
+/* Small Button Style */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid #d32f2f;
+  background: white;
+  color: #d32f2f;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sm:hover {
+  background: #d32f2f;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+/* Admin Card Improvements */
+.admin-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border: 1px solid #e0e0e0;
+}
+
+.admin-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.admin-block h3 {
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 700;
+}
+
+/* Responsive Table for Mobile */
+@media (max-width: 768px) {
+  .admin-table {
+    font-size: 0.8rem;
   }
   
-  .date-range {
-    grid-template-columns: 1fr;
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 6px;
   }
   
-  .history-actions {
-    flex-direction: column;
+  .admin-select {
+    max-width: 100%;
+    font-size: 0.85rem;
+    padding: 6px 10px;
   }
   
-  .breadcrumb {
+  .btn-action {
+    padding: 6px 10px;
     font-size: 0.75rem;
   }
   
-  .menu-btn .text h3 {
-    font-size: 1rem;
+  /* Stack email and make smaller */
+  .admin-table td:nth-child(1) {
+    font-size: 0.75rem;
+    min-width: 120px;
   }
   
-  .menu-btn .text p {
-    font-size: 0.8rem;
+  /* Adjust column widths for mobile */
+  .admin-table th:nth-child(1),
+  .admin-table td:nth-child(1) {
+    width: 30%;
+  }
+  
+  .admin-table th:nth-child(2),
+  .admin-table td:nth-child(2) {
+    width: 25%;
+  }
+  
+  .admin-table th:nth-child(3),
+  .admin-table td:nth-child(3) {
+    width: 20%;
+  }
+  
+  .admin-table th:nth-child(4),
+  .admin-table td:nth-child(4) {
+    width: 25%;
   }
 }
+
+@media (max-width: 480px) {
+  /* Make table scrollable on very small screens */
+  .admin-card {
+    padding: 20px 15px;
+  }
+  
+  .admin-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .admin-table {
+    min-width: 600px; /* Force minimum width */
+  }
+  
+  .admin-block-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .admin-block-header .btn-sm {
+    width: 100%;
+  }
+}
+
+/* Loading State for Dropdowns */
+.admin-select.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Success/Error Flash Animation */
+@keyframes flashGreen {
+  0%, 100% { background: white; }
+  50% { background: #e8f5e9; }
+}
+
+@keyframes flashRed {
+  0%, 100% { background: white; }
+  50% { background: #ffebee; }
+}
+
+.admin-table tr.success-flash {
+  animation: flashGreen 0.6s ease;
+}
+
+.admin-table tr.error-flash {
+  animation: flashRed 0.6s ease;
+}
+
+/* Empty State in Admin Table */
+.admin-table tbody tr td[colspan] {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-style: italic;
+}
+
