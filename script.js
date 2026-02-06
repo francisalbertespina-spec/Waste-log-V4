@@ -5,6 +5,7 @@ let pendingRequestId = null;
 let toastQueue = [];
 let activeToast = null;
 let toastTimer = null;
+let selectedWasteType = "";
 window.isUploading = false;
 
 const DEV_MODE = false; // Set to false for production
@@ -175,16 +176,17 @@ function updateBreadcrumbs() {
   if (selectedPackage) {
     const packageName = `Package ${selectedPackage.replace('P', '')}`;
     
-    // Update all breadcrumb package references
-    const currentPkg = document.getElementById('current-package');
-    const formPkg = document.getElementById('form-package');
-    const historyPkg = document.getElementById('history-package');
-    const adminPkg = document.getElementById('admin-package');
+    // Update ALL breadcrumb package references (both hazardous and solid)
+    const breadcrumbIds = [
+      'current-package', 'waste-type-package',
+      'hazardous-menu-package', 'hazardous-form-package', 'hazardous-history-package',
+      'solid-menu-package', 'solid-form-package', 'solid-history-package'
+    ];
     
-    if (currentPkg) currentPkg.textContent = packageName;
-    if (formPkg) formPkg.textContent = packageName;
-    if (historyPkg) historyPkg.textContent = packageName;
-    if (adminPkg) adminPkg.textContent = packageName;
+    breadcrumbIds.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = packageName;
+    });
   }
 }
 
@@ -204,7 +206,7 @@ function confirmPackage() {
   }
 
   updateBreadcrumbs();
-  showSection("menu-section");
+  showSection("waste-type-section"); // Changed from "menu-section"
 }
 
 function backToPackage() {
@@ -219,17 +221,29 @@ function showMenu() {
   showSection('menu-section');
 }
 
-function showLogForm() {
-  showSection('form-section');
-  document.getElementById('date').valueAsDate = new Date();
+function showLogForm(type) {
+  if (type === 'hazardous') {
+    showSection('hazardous-form-section');
+    document.getElementById('hazardous-date').valueAsDate = new Date();
+  } else if (type === 'solid') {
+    showSection('solid-form-section');
+    document.getElementById('solid-date').valueAsDate = new Date();
+  }
 }
 
-function showHistoryView() {
-  showSection('history-section');
+function showHistoryView(type) {
   const today = new Date();
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  document.getElementById('toDate').valueAsDate = today;
-  document.getElementById('fromDate').valueAsDate = weekAgo;
+  
+  if (type === 'hazardous') {
+    showSection('hazardous-history-section');
+    document.getElementById('hazardous-toDate').valueAsDate = today;
+    document.getElementById('hazardous-fromDate').valueAsDate = weekAgo;
+  } else if (type === 'solid') {
+    showSection('solid-history-section');
+    document.getElementById('solid-toDate').valueAsDate = today;
+    document.getElementById('solid-fromDate').valueAsDate = weekAgo;
+  }
 }
 
 /* ================= ADMIN FUNCTIONS ================= */
@@ -633,123 +647,220 @@ function validateForm() {
 
 
 // add entry
-async function addEntry() {
-  const dateField = document.getElementById("date");
-  const volumeField = document.getElementById("volume");
-  const wasteField = document.getElementById("waste");
+async function addEntry(type) {
+  if (type === 'hazardous') {
+    await addHazardousEntry();
+  } else if (type === 'solid') {
+    await addSolidEntry();
+  }
+}
 
-  document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+async function addHazardousEntry() {
+  // Clear previous errors
+  document.querySelectorAll('#hazardous-form-section .form-group').forEach(g => g.classList.remove('error'));
 
-  if (!dateField.value) {
-    document.getElementById('date-group').classList.add('error');
-    showToast("Please select a date", "error");
+  const date = document.getElementById('hazardous-date').value;
+  const volume = document.getElementById('hazardous-volume').value;
+  const waste = document.getElementById('hazardous-waste').value;
+  const photo = document.getElementById('hazardous-photo').files[0];
+
+  let hasError = false;
+
+  if (!date) {
+    document.getElementById('hazardous-date-group').classList.add('error');
+    hasError = true;
+  }
+  if (!volume) {
+    document.getElementById('hazardous-volume-group').classList.add('error');
+    hasError = true;
+  }
+  if (!waste) {
+    document.getElementById('hazardous-waste-group').classList.add('error');
+    hasError = true;
+  }
+  if (!photo) {
+    document.getElementById('hazardous-photo-group').classList.add('error');
+    hasError = true;
+  }
+
+  if (hasError) {
+    showToast('Please fill in all required fields', 'error');
     return;
   }
 
-  if (!volumeField.value) {
-    document.getElementById('volume-group').classList.add('error');
-    showToast("Please enter volume", "error");
-    return;
-  }
-
-  if (!wasteField.value) {
-    document.getElementById('waste-group').classList.add('error');
-    showToast("Please select waste type", "error");
-    return;
-  }
-
-  if (!compressedImageBase64) {
-    document.getElementById('photo-group').classList.add('error');
-    showToast("Please upload a photo", "error");
-    return;
-  }
-
-  if (window.isUploading) {
-    showToast("Upload already in progress", "info");
-    return;
-  }
-
-  window.isUploading = true;
-  const submitBtn = document.getElementById("submitBtn");
+  // Disable submit button
+  const submitBtn = document.getElementById('hazardous-submitBtn');
   submitBtn.disabled = true;
-  submitBtn.textContent = "Uploading...";
-
-  showToast("Uploading entry...", "info", { persistent: true, spinner: true });
-
-  // Extract base64 data (remove "data:image/jpeg;base64," prefix)
-  const base64Data = compressedImageBase64.split(',')[1];
-  
-  // Generate unique request ID to prevent duplicates
-  const requestId = `REQ_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  const formData = {
-    requestId: requestId,
-    package: selectedPackage,
-    date: dateField.value,
-    volume: volumeField.value,
-    waste: wasteField.value,
-    imageByte: base64Data,  // Backend expects "imageByte"
-    imageName: `Waste_${selectedPackage}_${Date.now()}.jpg`,  // Backend expects "imageName"
-    token: localStorage.getItem("userToken")
-  };
+  submitBtn.textContent = 'Submitting...';
 
   try {
+    const userEmail = parseJwt(localStorage.getItem("userToken")).email || "Unknown";
+    
+    // Stamp image with watermark
+    const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
+
+    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const payload = {
+      requestId: requestId,
+      token: localStorage.getItem("userToken"),
+      package: selectedPackage,
+      wasteType: 'hazardous', // Add waste type identifier
+      date: date,
+      volume: volume,
+      waste: waste,
+      imageByte: watermarkedImage.split(',')[1],
+      imageName: `${selectedPackage}_${Date.now()}.jpg`
+    };
+
     const res = await fetch(scriptURL, {
-      method: "POST",
-      body: JSON.stringify(formData)
+      method: 'POST',
+      body: JSON.stringify(payload)
     });
 
-    const result = await res.json();
+    const data = await res.json();
 
-    if (activeToast) dismissToast(activeToast);
-
-    if (result.success) {
-      showToast("Entry submitted successfully!", "success");
-      document.getElementById('modal').classList.add('active');
-      resetForm();
+    if (data.success) {
+      showToast('Entry submitted successfully!', 'success');
+      
+      // Clear form
+      document.getElementById('hazardous-date').value = '';
+      document.getElementById('hazardous-volume').value = '';
+      document.getElementById('hazardous-waste').value = '';
+      document.getElementById('hazardous-photo').value = '';
+      
+      // Reset photo preview
+      const uploadDiv = document.querySelector('#hazardous-form-section .photo-upload');
+      const img = uploadDiv.querySelector('img');
+      const placeholder = uploadDiv.querySelector('.placeholder');
+      if (img) img.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'flex';
+      
+      // Go back to menu after a delay
+      setTimeout(() => {
+        backToHazardousMenu();
+      }, 1500);
     } else {
-      showToast(result.error || result.message || "Upload failed", "error");
+      showToast(data.error || 'Submission failed', 'error');
     }
-
-  } catch (err) {
-    if (activeToast) dismissToast(activeToast);
-    showToast("Network error. Please try again.", "error");
-    console.error(err);
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Error submitting entry', 'error');
   } finally {
-    window.isUploading = false;
     submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Entry";
+    submitBtn.textContent = 'Submit Entry';
   }
 }
 
-function resetForm() {
-  document.getElementById('date').value = '';
-  document.getElementById('volume').value = '';
-  document.getElementById('waste').value = '';
-  document.getElementById('photo').value = '';
+  
+  // NEW: Solid waste entry
+async function addSolidEntry() {
+  // Clear previous errors
+  document.querySelectorAll('#solid-form-section .form-group').forEach(g => g.classList.remove('error'));
 
-  const uploadDiv = document.querySelector('.photo-upload');
-  const img = uploadDiv.querySelector('img');
-  const placeholder = uploadDiv.querySelector('.placeholder');
+  const date = document.getElementById('solid-date').value;
+  const locationNum = document.getElementById('solid-location').value;
+  const waste = document.getElementById('solid-waste').value;
+  const photo = document.getElementById('solid-photo').files[0];
 
-  if (img) img.remove();
-  if (placeholder) placeholder.style.display = 'block';
-  uploadDiv.classList.remove('has-image');
+  let hasError = false;
 
-  compressedImageBase64 = "";
-  document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+  if (!date) {
+    document.getElementById('solid-date-group').classList.add('error');
+    hasError = true;
+  }
+  if (!locationNum || locationNum < 462 || locationNum > 1260) {
+    document.getElementById('solid-location-group').classList.add('error');
+    hasError = true;
+  }
+  if (!waste) {
+    document.getElementById('solid-waste-group').classList.add('error');
+    hasError = true;
+  }
+  if (!photo) {
+    document.getElementById('solid-photo-group').classList.add('error');
+    hasError = true;
+  }
+
+  if (hasError) {
+    showToast('Please fill in all required fields', 'error');
+    return;
+  }
+
+  // Disable submit button
+  const submitBtn = document.getElementById('solid-submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try {
+    const userEmail = parseJwt(localStorage.getItem("userToken")).email || "Unknown";
+    const location = `P-${locationNum}`;
+    
+    // Stamp image with watermark
+    const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
+
+    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const payload = {
+      requestId: requestId,
+      token: localStorage.getItem("userToken"),
+      package: selectedPackage,
+      wasteType: 'solid', // Add waste type identifier
+      date: date,
+      location: location,
+      waste: waste,
+      imageByte: watermarkedImage.split(',')[1],
+      imageName: `${selectedPackage}_Solid_${Date.now()}.jpg`
+    };
+
+    const res = await fetch(scriptURL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showToast('Entry submitted successfully!', 'success');
+      
+      // Clear form
+      document.getElementById('solid-date').value = '';
+      document.getElementById('solid-location').value = '';
+      document.getElementById('solid-waste').value = '';
+      document.getElementById('solid-photo').value = '';
+      
+      // Reset photo preview
+      const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
+      const img = uploadDiv.querySelector('img');
+      const placeholder = uploadDiv.querySelector('.placeholder');
+      if (img) img.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'flex';
+      
+      // Go back to menu after a delay
+      setTimeout(() => {
+        backToSolidMenu();
+      }, 1500);
+    } else {
+      showToast(data.error || 'Submission failed', 'error');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Error submitting entry', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Entry';
+  }
 }
 
-function closeModal() {
-  document.getElementById('modal').classList.remove('active');
-}
+  
 
+  
 // Load history
-async function loadHistory() {
-  const from = document.getElementById('fromDate').value;
-  const to = document.getElementById('toDate').value;
-
-  document.getElementById("exportBtn").disabled = true;
+aasync function loadHistory(type) {
+  const prefix = type; // 'hazardous' or 'solid'
+  
+  const from = document.getElementById(`${prefix}-fromDate`).value;
+  const to = document.getElementById(`${prefix}-toDate`).value;
 
   if (!from || !to) {
     showToast('Please select a date range', 'error');
@@ -770,35 +881,41 @@ async function loadHistory() {
     return;
   }
 
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('table-container').style.display = 'none';
-  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById(`${prefix}-loading`).style.display = 'block';
+  document.getElementById(`${prefix}-table-container`).style.display = 'none';
+  document.getElementById(`${prefix}-empty-state`).style.display = 'none';
 
-  const url = `${scriptURL}?package=${selectedPackage}&from=${from}&to=${to}`;
+  const url = `${scriptURL}?package=${selectedPackage}&wasteType=${type}&from=${from}&to=${to}`;
 
   try {
     const res = await fetch(url);
     const rows = await res.json();
-    loadedRows = rows;
+    
+    // Store for export
+    if (type === 'hazardous') {
+      window.loadedHazardousRows = rows;
+    } else {
+      window.loadedSolidRows = rows;
+    }
 
-    document.getElementById('loading').style.display = 'none';
+    document.getElementById(`${prefix}-loading`).style.display = 'none';
 
     if (rows.error) {
       showToast(rows.error, 'error');
-      document.getElementById('empty-state').style.display = 'block';
+      document.getElementById(`${prefix}-empty-state`).style.display = 'block';
       return;
     }
 
-    const tbody = document.getElementById('table-body');
+    const tbody = document.getElementById(`${prefix}-table-body`);
     tbody.innerHTML = '';
 
     if (rows.length <= 1) {
-      document.getElementById('empty-state').style.display = 'block';
+      document.getElementById(`${prefix}-empty-state`).style.display = 'block';
       return;
     }
 
-    document.getElementById('table-container').style.display = 'block';
-    document.getElementById("exportBtn").disabled = false;
+    document.getElementById(`${prefix}-table-container`).style.display = 'block';
+    document.getElementById(`${prefix}-exportBtn`).disabled = false;
 
     rows.slice(1).forEach(r => {
       const date = new Date(r[0]).toLocaleDateString("en-US", {
@@ -808,10 +925,14 @@ async function loadHistory() {
       });
 
       let imageUrl = "";
-      if (r[5]) {
-        const match = r[5].match(/\/d\/([^/]+)/);
+      const photoCol = type === 'hazardous' ? 5 : 4; // Different column for photo
+      
+      if (r[photoCol]) {
+        const match = r[photoCol].match(/\/d\/([^/]+)/);
         if (match) {
           imageUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        } else {
+          imageUrl = r[photoCol];
         }
       }
       
@@ -820,27 +941,42 @@ async function loadHistory() {
         : '—';
 
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${date}</td>
-        <td>${r[1]}</td>
-        <td>${r[2]}</td>
-        <td>${r[4]}</td>
-        <td>${photoLink}</td>
-      `;
+      
+      if (type === 'hazardous') {
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${r[1]}</td>
+          <td>${r[2]}</td>
+          <td>${r[4]}</td>
+          <td>${photoLink}</td>
+        `;
+      } else {
+        // Solid waste: Date, Location, Waste, User, Photo
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${r[1]}</td>
+          <td>${r[2]}</td>
+          <td>${r[4]}</td>
+          <td>${photoLink}</td>
+        `;
+      }
+      
       tbody.appendChild(tr);
     });
   } catch (err) {
-    document.getElementById('loading').style.display = 'none';
+    document.getElementById(`${prefix}-loading`).style.display = 'none';
     showToast('Error loading data', 'error');
     console.error(err);
   }
 }
 
 // Export to XLSX
-async function exportExcel() {
-  const btn = document.getElementById("exportBtn");
+async function exportExcel(type) {
+  const prefix = type;
+  const btn = document.getElementById(`${prefix}-exportBtn`);
+  const rows = type === 'hazardous' ? window.loadedHazardousRows : window.loadedSolidRows;
 
-  if (!loadedRows || loadedRows.length <= 1) {
+  if (!rows || rows.length <= 1) {
     showToast("No data to export", "error");
     return;
   }
@@ -849,31 +985,39 @@ async function exportExcel() {
   btn.textContent = "Exporting...";
 
   try {
-    const rows = JSON.parse(JSON.stringify(loadedRows));
-    rows[0] = ["Date", "Volume (kg)", "Waste Name", "Package", "User", "Photo Link", "System Timestamp"];
+    const exportRows = JSON.parse(JSON.stringify(rows));
+    
+    if (type === 'hazardous') {
+      exportRows[0] = ["Date", "Volume (kg)", "Waste Name", "Package", "User", "Photo Link", "System Timestamp"];
+    } else {
+      exportRows[0] = ["Date", "Location (Pier)", "Waste Name", "Package", "User", "Photo Link", "System Timestamp"];
+    }
 
-    for (let i = 1; i < rows.length; i++) {
-      rows[i][0] = new Date(rows[i][0]).toLocaleDateString("en-US");
-      if (rows[i][6]) {
-        rows[i][6] = new Date(rows[i][6]).toLocaleString("en-US");
+    for (let i = 1; i < exportRows.length; i++) {
+      exportRows[i][0] = new Date(exportRows[i][0]).toLocaleDateString("en-US");
+      if (exportRows[i][6]) {
+        exportRows[i][6] = new Date(exportRows[i][6]).toLocaleString("en-US");
       }
     }
 
-    const worksheet = XLSX.utils.aoa_to_sheet(rows);
-    worksheet["!cols"] = [
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 40 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 80 },
-      { wch: 22 }
-    ];
+    const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+    
+    if (type === 'hazardous') {
+      worksheet["!cols"] = [
+        { wch: 15 }, { wch: 15 }, { wch: 40 }, { wch: 15 }, 
+        { wch: 30 }, { wch: 80 }, { wch: 22 }
+      ];
+    } else {
+      worksheet["!cols"] = [
+        { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, 
+        { wch: 30 }, { wch: 80 }, { wch: 22 }
+      ];
+    }
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
 
-    const filename = `waste_log_${selectedPackage}_${new Date()
+    const filename = `${type}_waste_log_${selectedPackage}_${new Date()
       .toISOString()
       .split("T")[0]}.xlsx`;
 
@@ -1100,4 +1244,30 @@ function closeImageModal() {
 function enableAdminUI() {
   document.body.classList.add("is-admin");
   console.log("Admin mode enabled");
+}
+
+  //additional js
+
+  function selectWasteType(type) {
+  selectedWasteType = type;
+  if (type === 'hazardous') {
+    showSection('hazardous-menu-section');
+  } else if (type === 'solid') {
+    showSection('solid-menu-section');
+  }
+}
+
+// Back to waste type selection
+function backToWasteType() {
+  showSection('waste-type-section');
+}
+
+// Back to hazardous menu
+function backToHazardousMenu() {
+  showSection('hazardous-menu-section');
+}
+
+// Back to solid menu
+function backToSolidMenu() {
+  showSection('solid-menu-section');
 }
