@@ -694,7 +694,8 @@ async function addHazardousEntry() {
   submitBtn.textContent = 'Submitting...';
 
   try {
-    const userEmail = parseJwt(localStorage.getItem("userToken")).email || "Unknown";
+    // FIX: Get email from localStorage instead of parseJwt
+    const userEmail = localStorage.getItem("userEmail") || "Unknown";
     
     // Stamp image with watermark
     const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
@@ -705,12 +706,12 @@ async function addHazardousEntry() {
       requestId: requestId,
       token: localStorage.getItem("userToken"),
       package: selectedPackage,
-      wasteType: 'hazardous', // Add waste type identifier
+      wasteType: 'hazardous',
       date: date,
       volume: volume,
       waste: waste,
       imageByte: watermarkedImage.split(',')[1],
-      imageName: `${selectedPackage}_${Date.now()}.jpg`
+      imageName: `${selectedPackage}_Hazardous_${Date.now()}.jpg`
     };
 
     const res = await fetch(scriptURL, {
@@ -733,8 +734,12 @@ async function addHazardousEntry() {
       const uploadDiv = document.querySelector('#hazardous-form-section .photo-upload');
       const img = uploadDiv.querySelector('img');
       const placeholder = uploadDiv.querySelector('.placeholder');
-      if (img) img.style.display = 'none';
+      if (img) {
+        img.style.display = 'none';
+        img.src = '';
+      }
       if (placeholder) placeholder.style.display = 'flex';
+      uploadDiv.classList.remove('has-image');
       
       // Go back to menu after a delay
       setTimeout(() => {
@@ -752,8 +757,7 @@ async function addHazardousEntry() {
   }
 }
 
-  
-  // NEW: Solid waste entry
+// NEW: Solid waste entry
 async function addSolidEntry() {
   // Clear previous errors
   document.querySelectorAll('#solid-form-section .form-group').forEach(g => g.classList.remove('error'));
@@ -793,7 +797,8 @@ async function addSolidEntry() {
   submitBtn.textContent = 'Submitting...';
 
   try {
-    const userEmail = parseJwt(localStorage.getItem("userToken")).email || "Unknown";
+    // FIX: Get email from localStorage instead of parseJwt
+    const userEmail = localStorage.getItem("userEmail") || "Unknown";
     const location = `P-${locationNum}`;
     
     // Stamp image with watermark
@@ -805,7 +810,7 @@ async function addSolidEntry() {
       requestId: requestId,
       token: localStorage.getItem("userToken"),
       package: selectedPackage,
-      wasteType: 'solid', // Add waste type identifier
+      wasteType: 'solid',
       date: date,
       location: location,
       waste: waste,
@@ -833,8 +838,12 @@ async function addSolidEntry() {
       const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
       const img = uploadDiv.querySelector('img');
       const placeholder = uploadDiv.querySelector('.placeholder');
-      if (img) img.style.display = 'none';
+      if (img) {
+        img.style.display = 'none';
+        img.src = '';
+      }
       if (placeholder) placeholder.style.display = 'flex';
+      uploadDiv.classList.remove('has-image');
       
       // Go back to menu after a delay
       setTimeout(() => {
@@ -851,7 +860,6 @@ async function addSolidEntry() {
     submitBtn.textContent = 'Submit Entry';
   }
 }
-
   
 
   
@@ -1143,9 +1151,12 @@ function logout() {
 async function handleCredentialResponse(response) {
   setLoginLoading(true);
 
-  const responsePayload = parseJwt(response.credential);
+  const responsePayload = parseJwt(response.credential); // This is Google's JWT
   const email = responsePayload.email.toLowerCase();
   const name = responsePayload.name;
+
+  // IMPORTANT: Store email in localStorage for later use
+  localStorage.setItem("userEmail", email); // ← ADD THIS LINE
 
   try {
     const checkURL = `${scriptURL}?email=${encodeURIComponent(email)}`;
@@ -1157,17 +1168,11 @@ async function handleCredentialResponse(response) {
     if (data.status === "Approved") {
       localStorage.setItem("userToken", data.token);
       localStorage.setItem("userRole", data.role || "user");
-      localStorage.setItem("userEmail", email);
 
-      // Display user info in header
       displayUserInfo(name, data.role || "user");
-
       showToast(`Welcome, ${name}!`, "success");
-
-      // Always start with package selection (user mode)
       showSection("package-section");
       
-      // Enable admin UI if admin
       if (data.role === "admin") {
         enableAdminUI();
       }
