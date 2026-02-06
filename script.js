@@ -1051,7 +1051,7 @@ async function addSolidEntry() {
       document.getElementById('solid-date').valueAsDate = new Date();
       
       // Stay on the form - NO navigation back
-    } else {
+    else {
       showToast(data.error || 'Submission failed', 'error');
     }
   } catch (error) {
