@@ -8,6 +8,11 @@ let toastTimer = null;
 let selectedWasteType = "";
 window.isUploading = false;
 
+// Duplicate submission prevention
+let activeSubmissions = new Set(); // Track active request IDs
+let completedSubmissions = new Map(); // Cache successful submissions (requestId -> timestamp)
+const SUBMISSION_CACHE_DURATION = 60000; // 1 minute cache
+
 const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
@@ -691,10 +696,39 @@ async function addHazardousEntry() {
     return;
   }
 
+  // Generate unique request ID early
+  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // DUPLICATE PREVENTION: Check if already submitting
+  if (activeSubmissions.has(requestId)) {
+    console.log('Duplicate submission attempt detected (active):', requestId);
+    showToast('Submission already in progress', 'info');
+    return;
+  }
+  
+  // Check if recently completed (within last minute)
+  const now = Date.now();
+  for (const [id, timestamp] of completedSubmissions.entries()) {
+    if (now - timestamp > SUBMISSION_CACHE_DURATION) {
+      completedSubmissions.delete(id); // Clean up old entries
+    }
+  }
+  
+  // Create submission fingerprint to detect identical content
+  const submissionFingerprint = `${selectedPackage}-hazardous-${date}-${volume}-${waste}`;
+  if (completedSubmissions.has(submissionFingerprint)) {
+    console.log('Duplicate submission detected (recently completed):', submissionFingerprint);
+    showToast('This entry was just submitted. Please wait before resubmitting.', 'info');
+    return;
+  }
+
   // Disable submit button
   const submitBtn = document.getElementById('hazardous-submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
+
+  // Mark as active
+  activeSubmissions.add(requestId);
 
   // FIX: Show uploading toast with spinner
   showToast('Uploading...', 'info', { persistent: true, spinner: true });
@@ -705,8 +739,6 @@ async function addHazardousEntry() {
     
     // Stamp image with watermark
     const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
-
-    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const payload = {
       requestId: requestId,
@@ -720,11 +752,17 @@ async function addHazardousEntry() {
       imageName: `${selectedPackage}_Hazardous_${Date.now()}.jpg`
     };
 
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const res = await fetch(scriptURL, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
     const data = await res.json();
 
     // FIX: Dismiss the uploading toast
@@ -733,6 +771,9 @@ async function addHazardousEntry() {
     }
 
     if (data.success) {
+      // Mark as completed
+      completedSubmissions.set(submissionFingerprint, Date.now());
+      
       showToast('Entry submitted successfully!', 'success');
       
       // Clear form
@@ -769,8 +810,19 @@ async function addHazardousEntry() {
     if (activeToast) {
       dismissToast(activeToast);
     }
-    showToast('Error submitting entry', 'error');
+    
+    // Provide more specific error messages
+    if (error.name === 'AbortError') {
+      showToast('Upload timeout - please check your connection', 'error');
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      showToast('Network error - please check your connection', 'error');
+    } else {
+      showToast('Error submitting entry', 'error');
+    }
   } finally {
+    // Remove from active submissions
+    activeSubmissions.delete(requestId);
+    
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit Entry';
   }
@@ -810,10 +862,40 @@ async function addSolidEntry() {
     return;
   }
 
+  // Generate unique request ID early
+  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // DUPLICATE PREVENTION: Check if already submitting
+  if (activeSubmissions.has(requestId)) {
+    console.log('Duplicate submission attempt detected (active):', requestId);
+    showToast('Submission already in progress', 'info');
+    return;
+  }
+  
+  // Check if recently completed (within last minute)
+  const now = Date.now();
+  for (const [id, timestamp] of completedSubmissions.entries()) {
+    if (now - timestamp > SUBMISSION_CACHE_DURATION) {
+      completedSubmissions.delete(id); // Clean up old entries
+    }
+  }
+  
+  // Create submission fingerprint to detect identical content
+  const location = `P-${locationNum}`;
+  const submissionFingerprint = `${selectedPackage}-solid-${date}-${location}-${waste}`;
+  if (completedSubmissions.has(submissionFingerprint)) {
+    console.log('Duplicate submission detected (recently completed):', submissionFingerprint);
+    showToast('This entry was just submitted. Please wait before resubmitting.', 'info');
+    return;
+  }
+
   // Disable submit button
   const submitBtn = document.getElementById('solid-submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
+
+  // Mark as active
+  activeSubmissions.add(requestId);
 
   // FIX: Show uploading toast with spinner
   showToast('Uploading...', 'info', { persistent: true, spinner: true });
@@ -821,12 +903,9 @@ async function addSolidEntry() {
   try {
     // FIX: Get email from localStorage instead of parseJwt
     const userEmail = localStorage.getItem("userEmail") || "Unknown";
-    const location = `P-${locationNum}`;
     
     // Stamp image with watermark
     const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
-
-    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const payload = {
       requestId: requestId,
@@ -840,11 +919,17 @@ async function addSolidEntry() {
       imageName: `${selectedPackage}_Solid_${Date.now()}.jpg`
     };
 
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const res = await fetch(scriptURL, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
     const data = await res.json();
 
     // FIX: Dismiss the uploading toast
@@ -853,6 +938,9 @@ async function addSolidEntry() {
     }
 
     if (data.success) {
+      // Mark as completed
+      completedSubmissions.set(submissionFingerprint, Date.now());
+      
       showToast('Entry submitted successfully!', 'success');
       
       // Clear form
@@ -889,8 +977,19 @@ async function addSolidEntry() {
     if (activeToast) {
       dismissToast(activeToast);
     }
-    showToast('Error submitting entry', 'error');
+    
+    // Provide more specific error messages
+    if (error.name === 'AbortError') {
+      showToast('Upload timeout - please check your connection', 'error');
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      showToast('Network error - please check your connection', 'error');
+    } else {
+      showToast('Error submitting entry', 'error');
+    }
   } finally {
+    // Remove from active submissions
+    activeSubmissions.delete(requestId);
+    
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit Entry';
   }
