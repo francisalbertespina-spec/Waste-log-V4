@@ -548,12 +548,14 @@ function compressImage(file) {
   });
 }
 
-// Image preview
-async function previewImage(event) {
+// Image preview - FIXED VERSION with formType parameter
+async function previewImage(event, formType) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const uploadDiv = document.querySelector('.photo-upload');
+  // Get the correct form section based on formType
+  const sectionId = formType === 'hazardous' ? 'hazardous-form-section' : 'solid-form-section';
+  const uploadDiv = document.querySelector(`#${sectionId} .photo-upload`);
   const placeholder = uploadDiv.querySelector('.placeholder');
 
   let img = uploadDiv.querySelector("img");
@@ -623,6 +625,7 @@ async function previewImage(event) {
 
   compressedImageBase64 = finalImage;
   img.src = finalImage;
+  img.style.display = 'block'; // FIX: Make sure image is visible
 
   uploadDiv.classList.add("has-image");
   if (placeholder) placeholder.style.display = "none";
@@ -693,6 +696,9 @@ async function addHazardousEntry() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
+  // FIX: Show uploading toast with spinner
+  showToast('Uploading...', 'info', { persistent: true, spinner: true });
+
   try {
     // FIX: Get email from localStorage instead of parseJwt
     const userEmail = localStorage.getItem("userEmail") || "Unknown";
@@ -721,6 +727,11 @@ async function addHazardousEntry() {
 
     const data = await res.json();
 
+    // FIX: Dismiss the uploading toast
+    if (activeToast) {
+      dismissToast(activeToast);
+    }
+
     if (data.success) {
       showToast('Entry submitted successfully!', 'success');
       
@@ -730,7 +741,7 @@ async function addHazardousEntry() {
       document.getElementById('hazardous-waste').value = '';
       document.getElementById('hazardous-photo').value = '';
       
-      // Reset photo preview
+      // FIX: Reset photo preview properly
       const uploadDiv = document.querySelector('#hazardous-form-section .photo-upload');
       const img = uploadDiv.querySelector('img');
       const placeholder = uploadDiv.querySelector('.placeholder');
@@ -750,6 +761,10 @@ async function addHazardousEntry() {
     }
   } catch (error) {
     console.error('Error:', error);
+    // FIX: Dismiss the uploading toast on error too
+    if (activeToast) {
+      dismissToast(activeToast);
+    }
     showToast('Error submitting entry', 'error');
   } finally {
     submitBtn.disabled = false;
@@ -796,6 +811,9 @@ async function addSolidEntry() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
+  // FIX: Show uploading toast with spinner
+  showToast('Uploading...', 'info', { persistent: true, spinner: true });
+
   try {
     // FIX: Get email from localStorage instead of parseJwt
     const userEmail = localStorage.getItem("userEmail") || "Unknown";
@@ -825,6 +843,11 @@ async function addSolidEntry() {
 
     const data = await res.json();
 
+    // FIX: Dismiss the uploading toast
+    if (activeToast) {
+      dismissToast(activeToast);
+    }
+
     if (data.success) {
       showToast('Entry submitted successfully!', 'success');
       
@@ -834,7 +857,7 @@ async function addSolidEntry() {
       document.getElementById('solid-waste').value = '';
       document.getElementById('solid-photo').value = '';
       
-      // Reset photo preview
+      // FIX: Reset photo preview properly
       const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
       const img = uploadDiv.querySelector('img');
       const placeholder = uploadDiv.querySelector('.placeholder');
@@ -854,6 +877,10 @@ async function addSolidEntry() {
     }
   } catch (error) {
     console.error('Error:', error);
+    // FIX: Dismiss the uploading toast on error too
+    if (activeToast) {
+      dismissToast(activeToast);
+    }
     showToast('Error submitting entry', 'error');
   } finally {
     submitBtn.disabled = false;
