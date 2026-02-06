@@ -1025,59 +1025,6 @@ async function addSolidEntry() {
     submitBtn.textContent = 'Submit Entry';
   }
 }
-      
-      // Clear form
-      document.getElementById('solid-date').value = '';
-      document.getElementById('solid-location').value = '';
-      document.getElementById('solid-waste').value = '';
-      document.getElementById('solid-photo').value = '';
-      
-      // FIX: Reset photo preview properly
-      const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
-      const img = uploadDiv.querySelector('.photo-preview');
-      const placeholder = uploadDiv.querySelector('.placeholder');
-      
-      if (img) {
-        img.remove(); // Completely remove the image element
-      }
-      
-      if (placeholder) {
-        placeholder.style.display = 'flex';
-      }
-      
-      uploadDiv.classList.remove('has-image');
-      
-      // Reset date to today for next entry
-      document.getElementById('solid-date').valueAsDate = new Date();
-      
-      // Stay on the form - NO navigation back
-    else {
-      showToast(data.error || 'Submission failed', 'error');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    // FIX: Dismiss the uploading toast on error too
-    if (activeToast) {
-      dismissToast(activeToast);
-    }
-    
-    // Provide more specific error messages
-    if (error.name === 'AbortError') {
-      showToast('Upload timeout - please check your connection', 'error');
-    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      showToast('Network error - please check your connection', 'error');
-    } else {
-      showToast('Error submitting entry', 'error');
-    }
-  } finally {
-    // Remove from active submissions
-    activeSubmissions.delete(requestId);
-    
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit Entry';
-  }
-}
-  
 
   
 // Load history
