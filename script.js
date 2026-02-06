@@ -743,19 +743,23 @@ async function addHazardousEntry() {
       
       // FIX: Reset photo preview properly
       const uploadDiv = document.querySelector('#hazardous-form-section .photo-upload');
-      const img = uploadDiv.querySelector('img');
+      const img = uploadDiv.querySelector('.photo-preview');
       const placeholder = uploadDiv.querySelector('.placeholder');
+      
       if (img) {
-        img.style.display = 'none';
-        img.src = '';
+        img.remove(); // Completely remove the image element
       }
-      if (placeholder) placeholder.style.display = 'flex';
+      
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
       uploadDiv.classList.remove('has-image');
       
-      // Go back to menu after a delay
-      setTimeout(() => {
-        backToHazardousMenu();
-      }, 1500);
+      // Reset date to today for next entry
+      document.getElementById('hazardous-date').valueAsDate = new Date();
+      
+      // Stay on the form - NO navigation back
     } else {
       showToast(data.error || 'Submission failed', 'error');
     }
@@ -859,19 +863,23 @@ async function addSolidEntry() {
       
       // FIX: Reset photo preview properly
       const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
-      const img = uploadDiv.querySelector('img');
+      const img = uploadDiv.querySelector('.photo-preview');
       const placeholder = uploadDiv.querySelector('.placeholder');
+      
       if (img) {
-        img.style.display = 'none';
-        img.src = '';
+        img.remove(); // Completely remove the image element
       }
-      if (placeholder) placeholder.style.display = 'flex';
+      
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
       uploadDiv.classList.remove('has-image');
       
-      // Go back to menu after a delay
-      setTimeout(() => {
-        backToSolidMenu();
-      }, 1500);
+      // Reset date to today for next entry
+      document.getElementById('solid-date').valueAsDate = new Date();
+      
+      // Stay on the form - NO navigation back
     } else {
       showToast(data.error || 'Submission failed', 'error');
     }
