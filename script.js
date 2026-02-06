@@ -856,7 +856,7 @@ async function addSolidEntry() {
 
   
 // Load history
-aasync function loadHistory(type) {
+async function loadHistory(type) {
   const prefix = type; // 'hazardous' or 'solid'
   
   const from = document.getElementById(`${prefix}-fromDate`).value;
