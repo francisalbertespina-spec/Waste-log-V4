@@ -55,9 +55,7 @@ function isSubmissionCompleted(fingerprint) {
 
 // Generate deterministic requestId from fingerprint
 function generateRequestId(fingerprint) {
-  // Use fingerprint + date to create consistent ID for same submission
-  // This ensures the same submission always generates the same requestId
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
   return `${fingerprint}-${today}`.replace(/[^a-zA-Z0-9-]/g, '_');
 }
 
