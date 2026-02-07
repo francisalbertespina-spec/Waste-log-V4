@@ -749,7 +749,7 @@ async function addHazardousEntry() {
   // FIRST CHECK: Was this already successfully submitted? (Check localStorage)
   const completionCheck = isSubmissionCompleted(submissionFingerprint);
   if (completionCheck.completed) {
-    showToast(`This entry was already submitted ${completionCheck.hoursSince}h ago. Please change the data if you need to submit again.`, 'error');
+    showToast(`Entry was already submitted ${completionCheck.hoursSince}h ago - please change the data to submit again`, 'error');
     return;
   }
   
@@ -767,7 +767,7 @@ async function addHazardousEntry() {
     const lockedAt = submissionFingerprints.get(submissionFingerprint);
     const secondsAgo = Math.floor((now - lockedAt) / 1000);
     console.log('🚫 DUPLICATE BLOCKED:', submissionFingerprint, `(locked ${secondsAgo}s ago)`);
-    showToast(`This entry is currently being submitted. Please wait.`, 'error');
+    showToast(`Entry is currently being submitted - please wait`, 'error');
     return;
   }
   
@@ -862,7 +862,7 @@ async function addHazardousEntry() {
       // Server says it's a duplicate - this means it WAS already saved
       console.log('⚠️ Server reported duplicate - marking as completed');
       markSubmissionAsCompleted(submissionFingerprint);
-      showToast('This entry was already submitted successfully', 'info');
+      showToast('Entry was already submitted successfully', 'info');
       
       // Clear form since it was actually saved
       document.getElementById('hazardous-date').value = '';
@@ -906,11 +906,11 @@ async function addHazardousEntry() {
     
     // Provide more specific error messages
     if (error.name === 'AbortError') {
-      showToast('Upload timeout - entry may have been saved. Please check history before retrying.', 'error');
+      showToast('Upload timeout - entry may have been saved - check history before retrying', 'error');
     } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      showToast('Network error - entry may have been saved. Please check history before retrying.', 'error');
+      showToast('Network error - entry may have been saved - check history before retrying', 'error');
     } else {
-      showToast('Error submitting entry - please check history before retrying.', 'error');
+      showToast('Error submitting entry - check history before retrying', 'error');
     }
   } finally {
     // Remove from active submissions
@@ -965,7 +965,7 @@ async function addSolidEntry() {
   // FIRST CHECK: Was this already successfully submitted? (Check localStorage)
   const completionCheck = isSubmissionCompleted(submissionFingerprint);
   if (completionCheck.completed) {
-    showToast(`This entry was already submitted ${completionCheck.hoursSince}h ago. Please change the data if you need to submit again.`, 'error');
+    showToast(`Entry was already submitted ${completionCheck.hoursSince}h ago - please change the data to submit again`, 'error');
     return;
   }
   
@@ -983,7 +983,7 @@ async function addSolidEntry() {
     const lockedAt = submissionFingerprints.get(submissionFingerprint);
     const secondsAgo = Math.floor((now - lockedAt) / 1000);
     console.log('🚫 DUPLICATE BLOCKED:', submissionFingerprint, `(locked ${secondsAgo}s ago)`);
-    showToast(`This entry is currently being submitted. Please wait.`, 'error');
+    showToast(`Entry is currently being submitted - please wait`, 'error');
     return;
   }
   
@@ -1078,7 +1078,7 @@ async function addSolidEntry() {
       // Server says it's a duplicate - this means it WAS already saved
       console.log('⚠️ Server reported duplicate - marking as completed');
       markSubmissionAsCompleted(submissionFingerprint);
-      showToast('This entry was already submitted successfully', 'info');
+      showToast('Entry was already submitted successfully', 'info');
       
       // Clear form since it was actually saved
       document.getElementById('solid-date').value = '';
@@ -1122,11 +1122,11 @@ async function addSolidEntry() {
     
     // Provide more specific error messages
     if (error.name === 'AbortError') {
-      showToast('Upload timeout - entry may have been saved. Please check history before retrying.', 'error');
+      showToast('Upload timeout - entry may have been saved - check history before retrying', 'error');
     } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      showToast('Network error - entry may have been saved. Please check history before retrying.', 'error');
+      showToast('Network error - entry may have been saved - check history before retrying', 'error');
     } else {
-      showToast('Error submitting entry - please check history before retrying.', 'error');
+      showToast('Error submitting entry - check history before retrying', 'error');
     }
   } finally {
     // Remove from active submissions
