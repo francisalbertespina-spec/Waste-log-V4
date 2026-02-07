@@ -18,6 +18,51 @@ const DEV_MODE = false; // Set to false for production
 const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
 //const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW: DUPLICATE PREVENTION HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Store successful submissions in localStorage (persists across sessions)
+function markSubmissionAsCompleted(fingerprint) {
+  const completedSubmissions = JSON.parse(localStorage.getItem('completedSubmissions') || '{}');
+  completedSubmissions[fingerprint] = Date.now();
+  
+  // Keep only last 24 hours of submissions
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  for (const [fp, timestamp] of Object.entries(completedSubmissions)) {
+    if (timestamp < oneDayAgo) {
+      delete completedSubmissions[fp];
+    }
+  }
+  
+  localStorage.setItem('completedSubmissions', JSON.stringify(completedSubmissions));
+  console.log('💾 Saved to localStorage:', fingerprint);
+}
+
+// Check if submission was already completed
+function isSubmissionCompleted(fingerprint) {
+  const completedSubmissions = JSON.parse(localStorage.getItem('completedSubmissions') || '{}');
+  
+  // Check if exists and was within last 24 hours
+  if (completedSubmissions[fingerprint]) {
+    const timeSinceSubmission = Date.now() - completedSubmissions[fingerprint];
+    const hoursSince = Math.floor(timeSinceSubmission / (1000 * 60 * 60));
+    return { completed: true, hoursSince };
+  }
+  
+  return { completed: false };
+}
+
+// Generate deterministic requestId from fingerprint
+function generateRequestId(fingerprint) {
+  // Use fingerprint + date to create consistent ID for same submission
+  // This ensures the same submission always generates the same requestId
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return `${fingerprint}-${today}`.replace(/[^a-zA-Z0-9-]/g, '_');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+
 async function stampImageWithWatermark(file, userEmail, selectedPackage) {
   return new Promise((resolve, reject) => {
 
@@ -696,10 +741,17 @@ async function addHazardousEntry() {
     return;
   }
 
-  // ═══ AGGRESSIVE DUPLICATE PREVENTION ═══
+  // ═══ ENHANCED DUPLICATE PREVENTION ═══
   
   // Create submission fingerprint FIRST (before any async operations)
   const submissionFingerprint = `${selectedPackage}-hazardous-${date}-${volume}-${waste}`;
+  
+  // FIRST CHECK: Was this already successfully submitted? (Check localStorage)
+  const completionCheck = isSubmissionCompleted(submissionFingerprint);
+  if (completionCheck.completed) {
+    showToast(`This entry was already submitted ${completionCheck.hoursSince}h ago. Please change the data if you need to submit again.`, 'error');
+    return;
+  }
   
   // Clean up expired fingerprints
   const now = Date.now();
@@ -710,12 +762,12 @@ async function addHazardousEntry() {
     }
   }
   
-  // CHECK IMMEDIATELY: Is this exact entry already submitted or submitting?
+  // SECOND CHECK: Is this currently being submitted?
   if (submissionFingerprints.has(submissionFingerprint)) {
     const lockedAt = submissionFingerprints.get(submissionFingerprint);
     const secondsAgo = Math.floor((now - lockedAt) / 1000);
     console.log('🚫 DUPLICATE BLOCKED:', submissionFingerprint, `(locked ${secondsAgo}s ago)`);
-    showToast(`This entry is already submitted or submitting. Please wait.`, 'error');
+    showToast(`This entry is currently being submitted. Please wait.`, 'error');
     return;
   }
   
@@ -728,9 +780,10 @@ async function addHazardousEntry() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
-  // Generate unique request ID
-  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate DETERMINISTIC request ID (same submission = same ID)
+  const requestId = generateRequestId(submissionFingerprint);
   activeSubmissions.add(requestId);
+  console.log('📝 Using requestId:', requestId);
 
   // Show uploading toast with spinner
   showToast('Uploading...', 'info', { persistent: true, spinner: true });
@@ -743,7 +796,7 @@ async function addHazardousEntry() {
     const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
     
     const payload = {
-      requestId: requestId,
+      requestId: requestId, // Now deterministic!
       token: localStorage.getItem("userToken"),
       package: selectedPackage,
       wasteType: 'hazardous',
@@ -774,8 +827,11 @@ async function addHazardousEntry() {
 
     if (data.success) {
       console.log('✅ Upload SUCCESS for fingerprint:', submissionFingerprint);
-      // Keep fingerprint locked for 2 minutes to prevent immediate resubmission
       
+      // CRITICAL: Mark as completed in localStorage
+      markSubmissionAsCompleted(submissionFingerprint);
+      
+      // Keep fingerprint locked for full duration
       showToast('Entry submitted successfully!', 'success');
       
       // Clear form
@@ -802,13 +858,34 @@ async function addHazardousEntry() {
       // Reset date to today for next entry
       document.getElementById('hazardous-date').valueAsDate = new Date();
       
+    } else if (data.error === 'Duplicate request') {
+      // Server says it's a duplicate - this means it WAS already saved
+      console.log('⚠️ Server reported duplicate - marking as completed');
+      markSubmissionAsCompleted(submissionFingerprint);
+      showToast('This entry was already submitted successfully', 'info');
+      
+      // Clear form since it was actually saved
+      document.getElementById('hazardous-date').value = '';
+      document.getElementById('hazardous-volume').value = '';
+      document.getElementById('hazardous-waste').value = '';
+      document.getElementById('hazardous-photo').value = '';
+      
+      const uploadDiv = document.querySelector('#hazardous-form-section .photo-upload');
+      const img = uploadDiv.querySelector('.photo-preview');
+      const placeholder = uploadDiv.querySelector('.placeholder');
+      if (img) img.remove();
+      if (placeholder) placeholder.style.display = 'flex';
+      uploadDiv.classList.remove('has-image');
+      
+      document.getElementById('hazardous-date').valueAsDate = new Date();
+      
     } else {
-      console.log('❌ Upload FAILED for fingerprint:', submissionFingerprint);
-      // On failure, remove the lock after 10 seconds to allow retry
+      console.log('❌ Upload FAILED for fingerprint:', submissionFingerprint, data.error);
+      // On other failures, unlock after 30 seconds (longer than before)
       setTimeout(() => {
         submissionFingerprints.delete(submissionFingerprint);
         console.log('🔓 Unlocked failed fingerprint:', submissionFingerprint);
-      }, 10000);
+      }, 30000); // 30 seconds instead of 10
       
       showToast(data.error || 'Submission failed', 'error');
     }
@@ -820,19 +897,20 @@ async function addHazardousEntry() {
       dismissToast(activeToast);
     }
     
-    // On error, remove the lock after 10 seconds to allow retry
+    // On network error, keep lock for LONGER (60 seconds) 
+    // This prevents rapid retry attempts that create duplicates
     setTimeout(() => {
       submissionFingerprints.delete(submissionFingerprint);
-      console.log('🔓 Unlocked errored fingerprint:', submissionFingerprint);
-    }, 10000);
+      console.log('🔓 Unlocked errored fingerprint after network error:', submissionFingerprint);
+    }, 60000); // 60 seconds for network errors
     
     // Provide more specific error messages
     if (error.name === 'AbortError') {
-      showToast('Upload timeout - please check your connection', 'error');
+      showToast('Upload timeout - entry may have been saved. Please check history before retrying.', 'error');
     } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      showToast('Network error - please check your connection', 'error');
+      showToast('Network error - entry may have been saved. Please check history before retrying.', 'error');
     } else {
-      showToast('Error submitting entry', 'error');
+      showToast('Error submitting entry - please check history before retrying.', 'error');
     }
   } finally {
     // Remove from active submissions
@@ -877,12 +955,19 @@ async function addSolidEntry() {
     return;
   }
 
-  // ═══ AGGRESSIVE DUPLICATE PREVENTION ═══
+  // ═══ ENHANCED DUPLICATE PREVENTION ═══
   
   const location = `P-${locationNum}`;
   
   // Create submission fingerprint FIRST (before any async operations)
   const submissionFingerprint = `${selectedPackage}-solid-${date}-${location}-${waste}`;
+  
+  // FIRST CHECK: Was this already successfully submitted? (Check localStorage)
+  const completionCheck = isSubmissionCompleted(submissionFingerprint);
+  if (completionCheck.completed) {
+    showToast(`This entry was already submitted ${completionCheck.hoursSince}h ago. Please change the data if you need to submit again.`, 'error');
+    return;
+  }
   
   // Clean up expired fingerprints
   const now = Date.now();
@@ -893,12 +978,12 @@ async function addSolidEntry() {
     }
   }
   
-  // CHECK IMMEDIATELY: Is this exact entry already submitted or submitting?
+  // SECOND CHECK: Is this currently being submitted?
   if (submissionFingerprints.has(submissionFingerprint)) {
     const lockedAt = submissionFingerprints.get(submissionFingerprint);
     const secondsAgo = Math.floor((now - lockedAt) / 1000);
     console.log('🚫 DUPLICATE BLOCKED:', submissionFingerprint, `(locked ${secondsAgo}s ago)`);
-    showToast(`This entry is already submitted or submitting. Please wait.`, 'error');
+    showToast(`This entry is currently being submitted. Please wait.`, 'error');
     return;
   }
   
@@ -911,9 +996,10 @@ async function addSolidEntry() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
-  // Generate unique request ID
-  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate DETERMINISTIC request ID (same submission = same ID)
+  const requestId = generateRequestId(submissionFingerprint);
   activeSubmissions.add(requestId);
+  console.log('📝 Using requestId:', requestId);
 
   // Show uploading toast with spinner
   showToast('Uploading...', 'info', { persistent: true, spinner: true });
@@ -926,7 +1012,7 @@ async function addSolidEntry() {
     const watermarkedImage = await stampImageWithWatermark(photo, userEmail, selectedPackage);
     
     const payload = {
-      requestId: requestId,
+      requestId: requestId, // Now deterministic!
       token: localStorage.getItem("userToken"),
       package: selectedPackage,
       wasteType: 'solid',
@@ -957,8 +1043,11 @@ async function addSolidEntry() {
 
     if (data.success) {
       console.log('✅ Upload SUCCESS for fingerprint:', submissionFingerprint);
-      // Keep fingerprint locked for 2 minutes to prevent immediate resubmission
       
+      // CRITICAL: Mark as completed in localStorage
+      markSubmissionAsCompleted(submissionFingerprint);
+      
+      // Keep fingerprint locked for full duration
       showToast('Entry submitted successfully!', 'success');
       
       // Clear form
@@ -985,13 +1074,34 @@ async function addSolidEntry() {
       // Reset date to today for next entry
       document.getElementById('solid-date').valueAsDate = new Date();
       
+    } else if (data.error === 'Duplicate request') {
+      // Server says it's a duplicate - this means it WAS already saved
+      console.log('⚠️ Server reported duplicate - marking as completed');
+      markSubmissionAsCompleted(submissionFingerprint);
+      showToast('This entry was already submitted successfully', 'info');
+      
+      // Clear form since it was actually saved
+      document.getElementById('solid-date').value = '';
+      document.getElementById('solid-location').value = '';
+      document.getElementById('solid-waste').value = '';
+      document.getElementById('solid-photo').value = '';
+      
+      const uploadDiv = document.querySelector('#solid-form-section .photo-upload');
+      const img = uploadDiv.querySelector('.photo-preview');
+      const placeholder = uploadDiv.querySelector('.placeholder');
+      if (img) img.remove();
+      if (placeholder) placeholder.style.display = 'flex';
+      uploadDiv.classList.remove('has-image');
+      
+      document.getElementById('solid-date').valueAsDate = new Date();
+      
     } else {
-      console.log('❌ Upload FAILED for fingerprint:', submissionFingerprint);
-      // On failure, remove the lock after 10 seconds to allow retry
+      console.log('❌ Upload FAILED for fingerprint:', submissionFingerprint, data.error);
+      // On other failures, unlock after 30 seconds (longer than before)
       setTimeout(() => {
         submissionFingerprints.delete(submissionFingerprint);
         console.log('🔓 Unlocked failed fingerprint:', submissionFingerprint);
-      }, 10000);
+      }, 30000); // 30 seconds instead of 10
       
       showToast(data.error || 'Submission failed', 'error');
     }
@@ -1003,19 +1113,20 @@ async function addSolidEntry() {
       dismissToast(activeToast);
     }
     
-    // On error, remove the lock after 10 seconds to allow retry
+    // On network error, keep lock for LONGER (60 seconds)
+    // This prevents rapid retry attempts that create duplicates
     setTimeout(() => {
       submissionFingerprints.delete(submissionFingerprint);
-      console.log('🔓 Unlocked errored fingerprint:', submissionFingerprint);
-    }, 10000);
+      console.log('🔓 Unlocked errored fingerprint after network error:', submissionFingerprint);
+    }, 60000); // 60 seconds for network errors
     
     // Provide more specific error messages
     if (error.name === 'AbortError') {
-      showToast('Upload timeout - please check your connection', 'error');
+      showToast('Upload timeout - entry may have been saved. Please check history before retrying.', 'error');
     } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      showToast('Network error - please check your connection', 'error');
+      showToast('Network error - entry may have been saved. Please check history before retrying.', 'error');
     } else {
-      showToast('Error submitting entry', 'error');
+      showToast('Error submitting entry - please check history before retrying.', 'error');
     }
   } finally {
     // Remove from active submissions
@@ -1320,7 +1431,7 @@ async function handleCredentialResponse(response) {
   const name = responsePayload.name;
 
   // IMPORTANT: Store email in localStorage for later use
-  localStorage.setItem("userEmail", email); // ← ADD THIS LINE
+  localStorage.setItem("userEmail", email);
 
   try {
     const checkURL = `${scriptURL}?email=${encodeURIComponent(email)}`;
