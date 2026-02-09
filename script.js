@@ -173,7 +173,13 @@ function processToastQueue() {
   activeToast = toast;
 
   if (!persistent) {
-    toastTimer = setTimeout(() => dismissToast(toast), duration || 3000);
+  let timeout = duration || 3000;
+
+    if (type === "error") {
+    timeout = 8000; // 🔥 error messages stay 8s
+    }
+
+    toastTimer = setTimeout(() => dismissToast(toast), timeout);
   }
 }
 
