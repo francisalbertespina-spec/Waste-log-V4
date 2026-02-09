@@ -630,7 +630,7 @@ input:checked + .toggle-slider:hover {
   100% { transform: rotate(360deg); }
 }
 
-/* Toast Notifications - FIXED */
+/* Toast Notifications - FINAL */
 .toast {
   position: fixed;
   top: 20px;
@@ -640,12 +640,12 @@ input:checked + .toggle-slider:hover {
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   display: flex;
-  align-items: flex-start; /* Changed for better multi-line alignment */
+  align-items: center; /* ← Center alignment (NOT flex-start) */
   gap: 12px;
   z-index: 1000;
   animation: slideInRight 0.3s ease-out;
-  max-width: 420px; /* Increased from 350px */
-  min-width: 280px; /* Added for consistency */
+  max-width: 420px;
+  min-width: 280px;
 }
 
 @keyframes slideInRight {
@@ -681,18 +681,18 @@ input:checked + .toggle-slider:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 18px;
-  margin-top: 2px; /* Better visual alignment */
+  font-size: 20px; /* ← Bigger icon (was 18px) */
 }
 
 .toast-message {
-  /* FIXED: Removed white-space: nowrap */
   word-wrap: break-word;
   word-break: break-word;
-  line-height: 1.4;
+  line-height: 1.5; /* ← Better spacing (was 1.4) */
   flex: 1;
   color: #333;
-  font-size: 14px;
+  font-size: 15px; /* ← Bigger text (was 14px) */
+  font-weight: 500; /* ← Bolder text (NEW!) */
+  align-self: center; /* ← Keeps centered when wrapping (NEW!) */
 }
 
 /* Mobile responsiveness */
