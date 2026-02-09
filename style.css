@@ -300,7 +300,7 @@ input:checked + .toggle-slider:hover {
 /* Package Cards */
 .package-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(3, 1fr); /* ✅ NEW - Always 3 columns */
   gap: 15px;
   margin: 25px 0;
 }
