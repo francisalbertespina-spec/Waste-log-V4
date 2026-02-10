@@ -1308,7 +1308,7 @@ async function loadHistory(type) {
   document.getElementById(`${prefix}-table-container`).style.display = 'none';
   document.getElementById(`${prefix}-empty-state`).style.display = 'none';
 
-  const url = `${scriptURL}?package=${selectedPackage}&wasteType=${type}&from=${from}&to=${to}`;
+  const url = const url = `${scriptURL}?package=${selectedPackage}&wasteType=${type}&from=${from}&to=${to}&token=${localStorage.getItem("userToken")}`;
 
   try {
     const res = await fetch(url);
