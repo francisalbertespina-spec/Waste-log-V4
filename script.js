@@ -239,29 +239,37 @@ Pkg: ${selectedPackage}`;
 
           const lines = watermarkText.split("\n");
 
-          // Dynamic sizing based on image width
-          const fontSize = Math.max(28, Math.floor(canvas.width / 30)); // Slightly smaller for better fit
-          const lineHeight = fontSize * 1.4; // More spacing between lines
-          const padding = fontSize * 0.8; // More padding
-          const boxHeight = lines.length * lineHeight + padding * 2;
+          // IMPROVED Dynamic sizing
+          const baseFontSize = Math.max(40, Math.floor(canvas.width / 28));
+          const baseLineHeight = baseFontSize * 1.5;
+          const basePadding = baseFontSize * 1.0;
+          const calculatedBoxHeight = lines.length * baseLineHeight + basePadding * 2;
           
-          // Ensure box doesn't exceed image height
-          const maxBoxHeight = canvas.height * 0.25; // Max 25% of image height
-          const finalBoxHeight = Math.min(boxHeight, maxBoxHeight);
-          const finalFontSize = boxHeight > maxBoxHeight ? fontSize * (maxBoxHeight / boxHeight) : fontSize;
-          const finalLineHeight = finalFontSize * 1.4;
-          const finalPadding = finalFontSize * 0.8;
+          // Ensure watermark doesn't exceed 20% of image height
+          const maxBoxHeight = canvas.height * 0.20;
+          const needsScaling = calculatedBoxHeight > maxBoxHeight;
           
-          ctx.fillStyle = "rgba(0,0,0,0.7)"; // Slightly darker background
+          const finalBoxHeight = needsScaling ? maxBoxHeight : calculatedBoxHeight;
+          const scale = needsScaling ? (maxBoxHeight / calculatedBoxHeight) : 1;
+          
+          const fontSize = baseFontSize * scale;
+          const lineHeight = baseLineHeight * scale;
+          const padding = basePadding * scale;
+          
+          // Draw semi-transparent black background
+          ctx.fillStyle = "rgba(0,0,0,0.75)";
           ctx.fillRect(0, canvas.height - finalBoxHeight, canvas.width, finalBoxHeight);
           
+          // Draw white text
           ctx.fillStyle = "white";
-          ctx.font = `bold ${finalFontSize}px Arial`;
+          ctx.font = `bold ${fontSize}px Arial`;
           ctx.textBaseline = "top";
           
+          const startY = canvas.height - finalBoxHeight + padding;
+          
           lines.forEach((line, i) => {
-            const y = canvas.height - finalBoxHeight + finalPadding + i * finalLineHeight;
-            ctx.fillText(line, finalPadding, y);
+            const y = startY + (i * lineHeight);
+            ctx.fillText(line, padding, y);
           });
 
           resolve(canvas.toDataURL("image/jpeg", 0.85));
@@ -807,44 +815,51 @@ async function previewImage(event, formType) {
 
   text += `User: ${email}\nPkg: ${pkg}`;
 
-    // 🖤 Background bar
-    const lines = text.split("\n");
+    // 🖤 Background bar with IMPROVED sizing
+  const lines = text.split("\n");
 
-   // Dynamic sizing based on image width
-        const fontSize = Math.max(28, Math.floor(canvas.width / 30)); // Slightly smaller for better fit
-        const lineHeight = fontSize * 1.4; // More spacing between lines
-        const padding = fontSize * 0.8; // More padding
-        const boxHeight = lines.length * lineHeight + padding * 2;
-        
-        // Ensure box doesn't exceed image height
-        const maxBoxHeight = canvas.height * 0.25; // Max 25% of image height
-        const finalBoxHeight = Math.min(boxHeight, maxBoxHeight);
-        const finalFontSize = boxHeight > maxBoxHeight ? fontSize * (maxBoxHeight / boxHeight) : fontSize;
-        const finalLineHeight = finalFontSize * 1.4;
-        const finalPadding = finalFontSize * 0.8;
-        
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; // Slightly darker background
-        ctx.fillRect(0, canvas.height - finalBoxHeight, canvas.width, finalBoxHeight);
-        
-        // ✍️ Draw text with dynamic sizing
-        ctx.fillStyle = "white";
-        ctx.font = `bold ${finalFontSize}px Arial`;
-        lines.forEach((line, i) => {
-          const y = canvas.height - finalBoxHeight + finalPadding + i * finalLineHeight;
-          ctx.fillText(line, finalPadding, y);
-        });
-      
+  // IMPROVED Dynamic sizing
+  const baseFontSize = Math.max(40, Math.floor(canvas.width / 28));
+  const baseLineHeight = baseFontSize * 1.5;
+  const basePadding = baseFontSize * 1.0;
+  const calculatedBoxHeight = lines.length * baseLineHeight + basePadding * 2;
   
-  const finalImage = canvas.toDataURL("image/jpeg", 0.85);
-    
-      compressedImageBase64 = finalImage;
-      img.src = finalImage;
-      img.style.display = 'block'; // FIX: Make sure image is visible
-    
-      uploadDiv.classList.add("has-image");
-      if (placeholder) placeholder.style.display = "none";
-    }
+  // Ensure watermark doesn't exceed 20% of image height
+  const maxBoxHeight = canvas.height * 0.20;
+  const needsScaling = calculatedBoxHeight > maxBoxHeight;
+  
+  const finalBoxHeight = needsScaling ? maxBoxHeight : calculatedBoxHeight;
+  const scale = needsScaling ? (maxBoxHeight / calculatedBoxHeight) : 1;
+  
+  const fontSize = baseFontSize * scale;
+  const lineHeight = baseLineHeight * scale;
+  const padding = basePadding * scale;
+  
+  // Draw semi-transparent black background
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
+  ctx.fillRect(0, canvas.height - finalBoxHeight, canvas.width, finalBoxHeight);
+  
+  // ✍️ Draw white text with dynamic sizing
+  ctx.fillStyle = "white";
+  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.textBaseline = "top";
+  
+  const startY = canvas.height - finalBoxHeight + padding;
+  
+  lines.forEach((line, i) => {
+    const y = startY + (i * lineHeight);
+    ctx.fillText(line, padding, y);
+  });
 
+  const finalImage = canvas.toDataURL("image/jpeg", 0.85);
+
+  compressedImageBase64 = finalImage;
+  img.src = finalImage;
+  img.style.display = 'block';
+
+  uploadDiv.classList.add("has-image");
+  if (placeholder) placeholder.style.display = "none";
+}
 
 // Form validation
 function validateForm() {
