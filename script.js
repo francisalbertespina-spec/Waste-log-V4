@@ -240,20 +240,28 @@ Pkg: ${selectedPackage}`;
           const lines = watermarkText.split("\n");
 
           // Dynamic sizing based on image width
-          const fontSize = Math.max(32, Math.floor(canvas.width / 25));
-          const lineHeight = fontSize * 1.3;
-          const padding = fontSize * 0.6;
+          const fontSize = Math.max(28, Math.floor(canvas.width / 30)); // Slightly smaller for better fit
+          const lineHeight = fontSize * 1.4; // More spacing between lines
+          const padding = fontSize * 0.8; // More padding
           const boxHeight = lines.length * lineHeight + padding * 2;
           
-          ctx.fillStyle = "rgba(0,0,0,0.6)";
-          ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+          // Ensure box doesn't exceed image height
+          const maxBoxHeight = canvas.height * 0.25; // Max 25% of image height
+          const finalBoxHeight = Math.min(boxHeight, maxBoxHeight);
+          const finalFontSize = boxHeight > maxBoxHeight ? fontSize * (maxBoxHeight / boxHeight) : fontSize;
+          const finalLineHeight = finalFontSize * 1.4;
+          const finalPadding = finalFontSize * 0.8;
+          
+          ctx.fillStyle = "rgba(0,0,0,0.7)"; // Slightly darker background
+          ctx.fillRect(0, canvas.height - finalBoxHeight, canvas.width, finalBoxHeight);
           
           ctx.fillStyle = "white";
-          ctx.font = `bold ${fontSize}px Arial`;
+          ctx.font = `bold ${finalFontSize}px Arial`;
           ctx.textBaseline = "top";
           
           lines.forEach((line, i) => {
-            ctx.fillText(line, padding, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
+            const y = canvas.height - finalBoxHeight + finalPadding + i * finalLineHeight;
+            ctx.fillText(line, finalPadding, y);
           });
 
           resolve(canvas.toDataURL("image/jpeg", 0.85));
@@ -802,22 +810,32 @@ async function previewImage(event, formType) {
     // 🖤 Background bar
     const lines = text.split("\n");
 
-    // Dynamic sizing based on image width
-    const fontSize = Math.max(32, Math.floor(canvas.width / 25));
-    const lineHeight = fontSize * 1.3;
-    const padding = fontSize * 0.6;
-    const boxHeight = lines.length * lineHeight + padding * 2;
-    
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
-    
-    // ✍️ Draw text with dynamic sizing
-    ctx.fillStyle = "white";
-    ctx.font = `bold ${fontSize}px Arial`;
-    lines.forEach((line, i) => {
-      ctx.fillText(line, padding, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
-    });
-      const finalImage = canvas.toDataURL("image/jpeg", 0.85);
+   // Dynamic sizing based on image width
+        const fontSize = Math.max(28, Math.floor(canvas.width / 30)); // Slightly smaller for better fit
+        const lineHeight = fontSize * 1.4; // More spacing between lines
+        const padding = fontSize * 0.8; // More padding
+        const boxHeight = lines.length * lineHeight + padding * 2;
+        
+        // Ensure box doesn't exceed image height
+        const maxBoxHeight = canvas.height * 0.25; // Max 25% of image height
+        const finalBoxHeight = Math.min(boxHeight, maxBoxHeight);
+        const finalFontSize = boxHeight > maxBoxHeight ? fontSize * (maxBoxHeight / boxHeight) : fontSize;
+        const finalLineHeight = finalFontSize * 1.4;
+        const finalPadding = finalFontSize * 0.8;
+        
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; // Slightly darker background
+        ctx.fillRect(0, canvas.height - finalBoxHeight, canvas.width, finalBoxHeight);
+        
+        // ✍️ Draw text with dynamic sizing
+        ctx.fillStyle = "white";
+        ctx.font = `bold ${finalFontSize}px Arial`;
+        lines.forEach((line, i) => {
+          const y = canvas.height - finalBoxHeight + finalPadding + i * finalLineHeight;
+          ctx.fillText(line, finalPadding, y);
+        });
+      
+  
+  const finalImage = canvas.toDataURL("image/jpeg", 0.85);
     
       compressedImageBase64 = finalImage;
       img.src = finalImage;
@@ -826,8 +844,6 @@ async function previewImage(event, formType) {
       uploadDiv.classList.add("has-image");
       if (placeholder) placeholder.style.display = "none";
     }
-
-
 
 
 // Form validation
