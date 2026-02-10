@@ -20,6 +20,141 @@ const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVP
 //const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SESSION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
+let sessionCheckTimer = null;
+
+// Check if token is expired
+function isTokenExpired() {
+  const expiry = localStorage.getItem('tokenExpiry');
+  if (!expiry) return true;
+  
+  const expiryTime = parseInt(expiry);
+  const now = Date.now();
+  
+  return now >= expiryTime;
+}
+
+// Get time until token expires (in minutes)
+function getTimeUntilExpiry() {
+  const expiry = localStorage.getItem('tokenExpiry');
+  if (!expiry) return 0;
+  
+  const expiryTime = parseInt(expiry);
+  const now = Date.now();
+  const diff = expiryTime - now;
+  
+  return Math.floor(diff / (1000 * 60)); // Return minutes
+}
+
+// Validate token with server
+async function validateSession() {
+  const token = localStorage.getItem('userToken');
+  
+  if (!token) {
+    handleSessionExpired();
+    return false;
+  }
+  
+  // First check local expiry
+  if (isTokenExpired()) {
+    handleSessionExpired();
+    return false;
+  }
+  
+  // Then validate with server
+  try {
+    const res = await fetch(`${scriptURL}?action=validateToken&token=${token}`);
+    const data = await res.json();
+    
+    if (data.valid) {
+      // Update expiry time if server returned new one
+      if (data.tokenExpiry) {
+        localStorage.setItem('tokenExpiry', data.tokenExpiry);
+      }
+      return true;
+    } else {
+      handleSessionExpired();
+      return false;
+    }
+  } catch (err) {
+    console.error('Session validation error:', err);
+    // Don't log out on network error, just return false
+    return false;
+  }
+}
+
+// Handle expired session
+function handleSessionExpired() {
+  console.log('Session expired');
+  
+  // Clear all local data
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('tokenExpiry');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userEmail');
+  
+  // Reset UI
+  document.body.classList.remove('is-admin');
+  const userInfo = document.getElementById('user-info');
+  if (userInfo) userInfo.style.display = 'none';
+  
+  // Show login section
+  showSection('login-section');
+  showToast('Session expired - please sign in again', 'info');
+  
+  // Stop session checking
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer);
+    sessionCheckTimer = null;
+  }
+}
+
+// Start periodic session validation
+function startSessionMonitoring() {
+  // Clear any existing timer
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer);
+  }
+  
+  // Check session every 5 minutes
+  sessionCheckTimer = setInterval(async () => {
+    await validateSession();
+  }, SESSION_CHECK_INTERVAL);
+  
+  // Also check when page becomes visible (user returns to tab)
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden) {
+      await validateSession();
+    }
+  });
+}
+
+// Refresh token (extend session)
+async function refreshUserToken() {
+  const token = localStorage.getItem('userToken');
+  if (!token) return false;
+  
+  try {
+    const res = await fetch(`${scriptURL}?action=refreshToken&token=${token}`);
+    const data = await res.json();
+    
+    if (data.success && data.tokenExpiry) {
+      localStorage.setItem('tokenExpiry', data.tokenExpiry);
+      console.log('Token refreshed successfully');
+      return true;
+    }
+    
+    return false;
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // NEW: DUPLICATE PREVENTION HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1408,35 +1543,66 @@ function updateToggleState(sectionId) {
 
 
 // Logout function
-function logout() {
-  if (confirm('Are you sure you want to sign out?')) {
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('userRole');
-    document.body.classList.remove('is-admin');
-    
-    // Hide user info
-    const userInfo = document.getElementById('user-info');
-    if (userInfo) userInfo.style.display = 'none';
-    
-    // Reset to login screen
-    showSection('login-section');
-    showToast('Signed out successfully', 'info');
-    
-    // Reload to reset Google Sign-In
-    setTimeout(() => location.reload(), 1000);
+// Improved Logout function
+async function logout() {
+  if (!confirm('Are you sure you want to sign out?')) {
+    return;
   }
+  
+  const token = localStorage.getItem('userToken');
+  
+  // Show loading
+  showToast('Signing out...', 'info', { persistent: true });
+  
+  try {
+    // Call server logout to invalidate token
+    if (token) {
+      await fetch(`${scriptURL}?action=logout&token=${token}`);
+    }
+  } catch (err) {
+    console.error('Logout error:', err);
+    // Continue with local logout even if server call fails
+  }
+  
+  // Clear ALL localStorage data
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('tokenExpiry');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('completedSubmissions'); // Clear submission history too
+  
+  // Reset UI
+  document.body.classList.remove('is-admin');
+  const userInfo = document.getElementById('user-info');
+  if (userInfo) userInfo.style.display = 'none';
+  
+  // Stop session monitoring
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer);
+    sessionCheckTimer = null;
+  }
+  
+  // Sign out from Google
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+  
+  // Show login screen
+  showSection('login-section');
+  
+  // Reload page after short delay to fully reset Google Sign-In
+  setTimeout(() => {
+    location.reload();
+  }, 500);
 }
 
-// Google login handler
+// Google login handler - UPDATED
 async function handleCredentialResponse(response) {
   setLoginLoading(true);
 
-  const responsePayload = parseJwt(response.credential); // This is Google's JWT
+  const responsePayload = parseJwt(response.credential);
   const email = responsePayload.email.toLowerCase();
   const name = responsePayload.name;
-
-  // IMPORTANT: Store email in localStorage for later use
-  localStorage.setItem("userEmail", email);
 
   try {
     const checkURL = `${scriptURL}?email=${encodeURIComponent(email)}`;
@@ -1446,12 +1612,21 @@ async function handleCredentialResponse(response) {
     setLoginLoading(false);
 
     if (data.status === "Approved") {
+      // Store all session data
       localStorage.setItem("userToken", data.token);
       localStorage.setItem("userRole", data.role || "user");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("tokenExpiry", data.tokenExpiry); // NEW: Store expiry
+      
+      // Calculate days until expiry
+      const daysUntilExpiry = Math.floor((data.tokenExpiry - Date.now()) / (1000 * 60 * 60 * 24));
 
       displayUserInfo(name, data.role || "user");
-      showToast(`Welcome, ${name}!`, "success");
+      showToast(`Welcome, ${name}! Session valid for ${daysUntilExpiry} days`, "success");
       showSection("package-section");
+      
+      // Start session monitoring
+      startSessionMonitoring();
       
       if (data.role === "admin") {
         enableAdminUI();
@@ -1470,7 +1645,8 @@ async function handleCredentialResponse(response) {
 }
 
 // Initialize
-window.onload = function() {
+// Initialize - UPDATED with auto-login
+window.onload = async function() {
   if (DEV_MODE) {
     console.warn('⚠️ DEV MODE ENABLED');
     localStorage.setItem("userToken", "DEV_TOKEN");
@@ -1481,7 +1657,46 @@ window.onload = function() {
     return;
   }
 
-  // NORMAL MODE (Google Sign-In)
+  // ═══ AUTO-LOGIN: Check for existing valid session ═══
+  const existingToken = localStorage.getItem('userToken');
+  const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  
+  if (existingToken && userEmail) {
+    console.log('Found existing session, validating...');
+    
+    // Validate the session
+    const isValid = await validateSession();
+    
+    if (isValid) {
+      // Session is valid - restore user interface
+      console.log('Session valid - auto-logging in');
+      
+      const userName = userEmail.split('@')[0];
+      displayUserInfo(userName, userRole || 'user');
+      showSection('package-section');
+      
+      if (userRole === 'admin') {
+        enableAdminUI();
+      }
+      
+      // Start session monitoring
+      startSessionMonitoring();
+      
+      // Show welcome back message
+      const minutesLeft = getTimeUntilExpiry();
+      const hoursLeft = Math.floor(minutesLeft / 60);
+      showToast(`Welcome back! Session expires in ${hoursLeft}h`, 'success');
+      
+      // Don't show Google Sign-In button
+      return;
+    } else {
+      console.log('Session invalid or expired');
+      // Will fall through to show Google Sign-In
+    }
+  }
+
+  // ═══ NORMAL MODE: Show Google Sign-In ═══
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.initialize({
       client_id: "648943267004-cgsr4bhegtmma2jmlsekjtt494j8cl7f.apps.googleusercontent.com",
