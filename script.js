@@ -1348,7 +1348,7 @@ async function loadHistory(type) {
       });
 
       let imageUrl = "";
-      const photoCol = type === 'hazardous' ? 5 : 4; // Different column for photo
+      const photoCol = 5; // Photo is at index 5 for both hazardous and solid waste
       
       if (r[photoCol]) {
         const match = r[photoCol].match(/\/d\/([^/]+)/);
