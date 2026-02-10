@@ -4,7 +4,7 @@ let compressedImageBase64 = "";
 let pendingRequestId = null;
 let toastQueue = [];
 let activeToast = null;
-let toastTimer = null;c
+let toastTimer = null;
 let selectedWasteType = "";
 window.isUploading = false;
 
