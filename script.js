@@ -4,7 +4,7 @@ let compressedImageBase64 = "";
 let pendingRequestId = null;
 let toastQueue = [];
 let activeToast = null;
-let toastTimer = null;
+let toastTimer = null;c
 let selectedWasteType = "";
 window.isUploading = false;
 
@@ -239,17 +239,21 @@ Pkg: ${selectedPackage}`;
 
           const lines = watermarkText.split("\n");
 
-          const boxHeight = lines.length * 28 + 20;
-
+          // Dynamic sizing based on image width
+          const fontSize = Math.max(32, Math.floor(canvas.width / 25));
+          const lineHeight = fontSize * 1.3;
+          const padding = fontSize * 0.6;
+          const boxHeight = lines.length * lineHeight + padding * 2;
+          
           ctx.fillStyle = "rgba(0,0,0,0.6)";
           ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
-
+          
           ctx.fillStyle = "white";
-          ctx.font = "22px Arial";
+          ctx.font = `bold ${fontSize}px Arial`;
           ctx.textBaseline = "top";
-
+          
           lines.forEach((line, i) => {
-            ctx.fillText(line, 10, canvas.height - boxHeight + 10 + i * 28);
+            ctx.fillText(line, padding, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
           });
 
           resolve(canvas.toDataURL("image/jpeg", 0.85));
@@ -795,31 +799,33 @@ async function previewImage(event, formType) {
 
   text += `User: ${email}\nPkg: ${pkg}`;
 
-  // 🖤 Background bar
-  const lines = text.split("\n");
-  const lineHeight = 40;
-  const padding = 20;
-  const boxHeight = lines.length * lineHeight + padding * 2;
+    // 🖤 Background bar
+    const lines = text.split("\n");
 
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
-
-  // ✍️ Draw text
-  ctx.fillStyle = "white";
-  ctx.font = "32px Arial";
-  lines.forEach((line, i) => {
-    ctx.fillText(line, 20, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
-  });
-
-  const finalImage = canvas.toDataURL("image/jpeg", 0.85);
-
-  compressedImageBase64 = finalImage;
-  img.src = finalImage;
-  img.style.display = 'block'; // FIX: Make sure image is visible
-
-  uploadDiv.classList.add("has-image");
-  if (placeholder) placeholder.style.display = "none";
-}
+    // Dynamic sizing based on image width
+    const fontSize = Math.max(32, Math.floor(canvas.width / 25));
+    const lineHeight = fontSize * 1.3;
+    const padding = fontSize * 0.6;
+    const boxHeight = lines.length * lineHeight + padding * 2;
+    
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+    
+    // ✍️ Draw text with dynamic sizing
+    ctx.fillStyle = "white";
+    ctx.font = `bold ${fontSize}px Arial`;
+    lines.forEach((line, i) => {
+      ctx.fillText(line, padding, canvas.height - boxHeight + padding + (i + 1) * lineHeight);
+    });
+      const finalImage = canvas.toDataURL("image/jpeg", 0.85);
+    
+      compressedImageBase64 = finalImage;
+      img.src = finalImage;
+      img.style.display = 'block'; // FIX: Make sure image is visible
+    
+      uploadDiv.classList.add("has-image");
+      if (placeholder) placeholder.style.display = "none";
+    }
 
 
 
