@@ -1864,40 +1864,6 @@ async function logout() {
     location.reload();
   }, 500);
 }
-  
-  // Clear ALL localStorage data
-  localStorage.removeItem('userToken');
-  localStorage.removeItem('tokenExpiry');
-  localStorage.removeItem('userRole');
-  localStorage.removeItem('userEmail');
-  localStorage.removeItem('completedSubmissions'); // Clear submission history too
-  
-  // Reset UI
-  document.body.classList.remove('is-admin');
-  const userInfo = document.getElementById('user-info');
-  if (userInfo) userInfo.style.display = 'none';
-  
-  // Stop session monitoring
-  if (sessionCheckTimer) {
-    clearInterval(sessionCheckTimer);
-    sessionCheckTimer = null;
-  }
-  
-  // ✨ NEW: Stop token refresh timer
-  stopTokenRefreshTimer();
-  
-  // Sign out from Google
-  if (window.google && google.accounts && google.accounts.id) {
-    google.accounts.id.disableAutoSelect();
-  }
-  
-  // Show login screen
-  showSection('login-section');
-  
-  // Reload page after short delay to fully reset Google Sign-In
-  setTimeout(() => {
-    location.reload();
-  }, 500);
 
 
 // Google login handler - UPDATED
@@ -1920,7 +1886,7 @@ async function handleCredentialResponse(response) {
       localStorage.setItem("userToken", data.token);
       localStorage.setItem("userRole", data.role || "user");
       localStorage.setItem("userEmail", email);
-      localStorage.setItem("tokenExpiry", data.tokenExpiry); // NEW: Store expiry
+      localStorage.setItem("tokenExpiry", data.tokenExpiry);
       
       // Calculate days until expiry
       const daysUntilExpiry = Math.floor((data.tokenExpiry - Date.now()) / (1000 * 60 * 60 * 24));
@@ -1947,6 +1913,7 @@ async function handleCredentialResponse(response) {
     showToast("Connection error", "error");
   }
 }
+
 
 // Initialize
 // Initialize - UPDATED with auto-login
