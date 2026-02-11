@@ -239,6 +239,23 @@ input:checked + .toggle-slider:hover {
   border: 2px solid #ffd700;
 }
 
+/* Admin-only visibility control */
+.admin-only {
+  display: none !important;
+}
+
+body.is-admin .admin-only {
+  display: block !important;
+}
+
+body.is-admin .admin-only.mode-toggle {
+  display: flex !important;
+}
+
+body.is-admin .section.admin-only.active {
+  display: block !important;
+}
+
 .admin-dashboard-header h2 {
   font-size: 1.8rem;
   color: #333;
