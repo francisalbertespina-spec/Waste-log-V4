@@ -93,6 +93,12 @@ body {
   color: #333;
 }
 
+.role-badge.super_admin {
+  background: linear-gradient(135deg, #ff6b6b 0%, #d32f2f 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
 /* Mode Toggle Switch */
 .mode-toggle {
   display: flex;
@@ -1105,6 +1111,12 @@ td a.photo-link {
   background: #fff9e6;
 }
 
+.role-select option[value="super_admin"] {
+  color: #c62828;
+  background: #ffebee;
+  font-weight: 700;
+}
+
 .role-select option[value="user"] {
   color: #1976d2;
   background: #e3f2fd;
@@ -1115,6 +1127,13 @@ td a.photo-link {
   color: #d32f2f;
   border-color: #d32f2f;
   background-color: #fffbf0;
+}
+
+.role-select[value="super_admin"] {
+  color: #c62828;
+  border-color: #c62828;
+  background-color: #fff5f5;
+  font-weight: 700;
 }
 
 .role-select[value="user"] {
@@ -1227,10 +1246,24 @@ td a.photo-link {
   font-weight: 700;
 }
 
+/* Admin Table Wrapper - Ensures scrollability on small screens */
+.admin-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -15px; /* Extend to edges on mobile */
+  padding: 0 15px;
+}
+
 /* Responsive Table for Mobile */
 @media (max-width: 768px) {
+  .admin-table-wrapper {
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  
   .admin-table {
     font-size: 0.8rem;
+    min-width: 600px; /* Force minimum width to ensure all columns visible */
   }
   
   .admin-table th,
@@ -1277,19 +1310,11 @@ td a.photo-link {
   }
 }
 
+
 @media (max-width: 480px) {
   /* Make table scrollable on very small screens */
   .admin-card {
     padding: 20px 15px;
-  }
-  
-  .admin-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .admin-table {
-    min-width: 600px; /* Force minimum width */
   }
   
   .admin-block-header {
@@ -1334,154 +1359,4 @@ td a.photo-link {
   padding: 40px 20px;
   color: #999;
   font-style: italic;
-}
-
-/* new */
-/* ===============================================
-   ALTERNATIVE MOBILE FIX - COMPACT LAYOUT
-   Use this INSTEAD if you prefer everything fits without scrolling
-   Replace the mobile sections in your admin CSS with this
-   =============================================== */
-
-/* Mobile-specific adjustments - NO SCROLLING */
-@media (max-width: 768px) {
-  
-  /* Reduce card padding */
-  .admin-card {
-    padding: 20px 12px;
-  }
-  
-  /* Make table fit screen */
-  .admin-table {
-    font-size: 0.7rem;
-    table-layout: auto; /* Let columns shrink naturally */
-  }
-  
-  .admin-table th,
-  .admin-table td {
-    padding: 8px 4px;
-    font-size: 0.7rem;
-  }
-  
-  /* Email column - smaller and allow break */
-  .admin-table th:nth-child(1),
-  .admin-table td:nth-child(1) {
-    width: auto;
-    min-width: 100px;
-    font-size: 0.65rem;
-    word-break: break-all;
-    line-height: 1.2;
-  }
-  
-  /* Status column - compact */
-  .admin-table th:nth-child(2),
-  .admin-table td:nth-child(2) {
-    width: auto;
-    min-width: 85px;
-  }
-  
-  /* Role column - compact */
-  .admin-table th:nth-child(3),
-  .admin-table td:nth-child(3) {
-    width: auto;
-    min-width: 70px;
-  }
-  
-  /* Action column - compact */
-  .admin-table th:nth-child(4),
-  .admin-table td:nth-child(4) {
-    width: auto;
-    min-width: 80px;
-  }
-  
-  /* Compact dropdowns */
-  .admin-select {
-    max-width: 100%;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 4px 6px;
-    padding-right: 20px;
-    background-size: 12px;
-    background-position: right 4px center;
-  }
-  
-  /* Compact buttons - icon only or shorter text */
-  .btn-action {
-    padding: 4px 6px;
-    font-size: 0.65rem;
-    gap: 2px;
-  }
-  
-  /* Shorten button text on mobile */
-  .btn-approve {
-    font-size: 0;
-  }
-  
-  .btn-approve::before {
-    content: '✓';
-    font-size: 1rem;
-  }
-  
-  .btn-reject {
-    font-size: 0;
-  }
-  
-  .btn-reject::before {
-    content: '✗';
-    font-size: 1rem;
-  }
-  
-  .btn-delete {
-    font-size: 0;
-  }
-  
-  .btn-delete::before {
-    content: '🗑️';
-    font-size: 1rem;
-  }
-  
-  /* Table headers - compact */
-  .admin-table th {
-    font-size: 0.65rem;
-    padding: 8px 4px;
-  }
-  
-  /* Stack header and button on mobile */
-  .admin-block-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  
-  .admin-block h3 {
-    font-size: 1rem;
-  }
-  
-  .admin-block-header .btn-sm {
-    width: 100%;
-    font-size: 0.8rem;
-  }
-}
-
-/* Extra compact for very small screens */
-@media (max-width: 400px) {
-  .admin-card {
-    padding: 15px 8px;
-  }
-  
-  .admin-table th,
-  .admin-table td {
-    padding: 6px 3px;
-  }
-  
-  .admin-select {
-    font-size: 0.65rem;
-    padding: 3px 5px;
-    padding-right: 18px;
-  }
-  
-  /* Even smaller email text */
-  .admin-table td:nth-child(1) {
-    font-size: 0.6rem;
-  }
 }
