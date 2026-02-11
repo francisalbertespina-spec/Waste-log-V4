@@ -510,17 +510,19 @@
               <h3>All Users</h3>
               <button class="btn btn-sm" onclick="loadUsers()">Refresh</button>
             </div>
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody"></tbody>
-            </table>
+            <div class="admin-table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -584,4 +586,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
