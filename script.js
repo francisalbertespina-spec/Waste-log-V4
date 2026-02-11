@@ -13,11 +13,110 @@ let activeSubmissions = new Set(); // Track active request IDs
 let submissionFingerprints = new Map(); // Track ALL attempts (success OR in-progress)
 const FINGERPRINT_LOCK_DURATION = 120000; // 2 minutes lock - prevents ANY resubmission
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CENTRALIZED FETCH WITH 401 HANDLING
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Authenticated fetch wrapper with automatic 401 handling
+ * Automatically adds token to requests and handles auth failures
+ */
+async function authenticatedFetch(url, options = {}) {
+  const token = localStorage.getItem('userToken');
+  
+  // If no token and not a login request, fail immediately
+  if (!token && !url.includes('email=')) {
+    console.log('❌ No token available');
+    handleSessionExpired();
+    throw new Error('No authentication token');
+  }
+  
+  // Add token to URL if not already present (for GET requests)
+  if (token && !url.includes('token=') && !url.includes('email=')) {
+    const separator = url.includes('?') ? '&' : '?';
+    url = `${url}${separator}token=${token}`;
+  }
+  
+  // Add token to POST body if applicable
+  if (options.method === 'POST' && options.body) {
+    try {
+      const body = JSON.parse(options.body);
+      if (!body.token && token) {
+        body.token = token;
+        options.body = JSON.stringify(body);
+      }
+    } catch (e) {
+      // Body is not JSON, skip
+    }
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      console.log('🚫 401 Unauthorized - session expired');
+      
+      // Parse response to show specific error if available
+      try {
+        const data = await response.json();
+        if (data.message && data.message !== 'Unauthorized') {
+          showToast(data.message, 'error');
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+      
+      handleSessionExpired();
+      throw new Error('Unauthorized');
+    }
+    
+    // Handle 403 Forbidden (e.g., not admin)
+    if (response.status === 403) {
+      console.log('🚫 403 Forbidden - insufficient permissions');
+      showToast('You do not have permission to perform this action', 'error');
+      throw new Error('Forbidden');
+    }
+    
+    // Handle 429 Rate Limit
+    if (response.status === 429) {
+      console.log('⚠️ 429 Rate Limit Exceeded');
+      showToast('Too many requests - please wait a moment', 'error');
+      throw new Error('Rate limit exceeded');
+    }
+    
+    // Handle 500 Server Error
+    if (response.status === 500) {
+      console.log('💥 500 Server Error');
+      showToast('Server error - please try again', 'error');
+      throw new Error('Server error');
+    }
+    
+    return response;
+    
+  } catch (error) {
+    // Re-throw specific errors
+    if (['Unauthorized', 'Forbidden', 'Rate limit exceeded', 'Server error'].includes(error.message)) {
+      throw error;
+    }
+    
+    // Handle network errors
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      console.error('🌐 Network error:', error);
+      showToast('Network error - check your connection', 'error');
+      throw new Error('Network error');
+    }
+    
+    // Other errors
+    console.error('Fetch error:', error);
+    throw error;
+  }
+}
+
 const DEV_MODE = false; // Set to false for production
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
 // Stable V4 - const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
-//const scriptURL = "https://script.google.com/macros/s/AKfycbwBEuKeVKCv4obPOhmJ6mj_pb7tGihzNAQdRUBsTXKuIpTf6iLo74IV32ocBrHcQGM4/exec";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SESSION MANAGEMENT
@@ -66,11 +165,10 @@ async function validateSession() {
   
   // Then validate with server
   try {
-    const res = await fetch(`${scriptURL}?action=validateToken&token=${token}`);
+    const res = await authenticatedFetch(`${scriptURL}?action=validateToken`);
     const data = await res.json();
     
     if (data.valid) {
-      // Update expiry time if server returned new one
       if (data.tokenExpiry) {
         localStorage.setItem('tokenExpiry', data.tokenExpiry);
       }
@@ -110,6 +208,8 @@ function handleSessionExpired() {
     clearInterval(sessionCheckTimer);
     sessionCheckTimer = null;
   }
+  // ✨ NEW: Stop token refresh timer
+  stopTokenRefreshTimer();
 }
 
 // Start periodic session validation
@@ -130,6 +230,8 @@ function startSessionMonitoring() {
       await validateSession();
     }
   });
+  // ✨ NEW: Start token refresh timer
+  startTokenRefreshTimer();
 }
 
 // Refresh token (extend session)
@@ -138,7 +240,7 @@ async function refreshUserToken() {
   if (!token) return false;
   
   try {
-    const res = await fetch(`${scriptURL}?action=refreshToken&token=${token}`);
+    const res = await authenticatedFetch(`${scriptURL}?action=refreshToken`);
     const data = await res.json();
     
     if (data.success && data.tokenExpiry) {
@@ -151,6 +253,73 @@ async function refreshUserToken() {
   } catch (err) {
     console.error('Token refresh error:', err);
     return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTO TOKEN REFRESH
+// ═══════════════════════════════════════════════════════════════════════════
+
+let tokenRefreshTimer = null;
+
+/**
+ * Automatically refresh token before it expires
+ * Checks every 30 minutes, refreshes if < 24 hours remaining
+ */
+function startTokenRefreshTimer() {
+  // Clear any existing timer
+  if (tokenRefreshTimer) {
+    clearInterval(tokenRefreshTimer);
+    tokenRefreshTimer = null;
+  }
+  
+  // Check immediately on start
+  checkAndRefreshToken();
+  
+  // Then check every 30 minutes
+  tokenRefreshTimer = setInterval(async () => {
+    await checkAndRefreshToken();
+  }, 30 * 60 * 1000); // 30 minutes
+  
+  console.log('✅ Token refresh timer started');
+}
+
+async function checkAndRefreshToken() {
+  const minutesLeft = getTimeUntilExpiry();
+  
+  // If expired or no time left, don't try to refresh
+  if (minutesLeft <= 0) {
+    console.log('❌ Token already expired');
+    return;
+  }
+  
+  // If less than 24 hours (1440 minutes) remaining, refresh
+  if (minutesLeft < 1440) {
+    console.log(`⏰ Token expiring in ${minutesLeft} minutes - refreshing...`);
+    
+    const success = await refreshUserToken();
+    
+    if (success) {
+      const newMinutesLeft = getTimeUntilExpiry();
+      const hoursLeft = Math.floor(newMinutesLeft / 60);
+      console.log(`✅ Token refreshed - valid for ${hoursLeft} more hours`);
+      showToast(`Session extended for ${Math.floor(hoursLeft / 24)} more days`, 'success', { duration: 2000 });
+    } else {
+      console.log('❌ Token refresh failed - will expire soon');
+      
+      // If refresh fails and < 1 hour left, warn user
+      if (minutesLeft < 60) {
+        showToast('Session expiring soon - please save your work', 'error');
+      }
+    }
+  }
+}
+
+function stopTokenRefreshTimer() {
+  if (tokenRefreshTimer) {
+    clearInterval(tokenRefreshTimer);
+    tokenRefreshTimer = null;
+    console.log('🛑 Token refresh timer stopped');
   }
 }
 
@@ -370,7 +539,54 @@ function setLoginLoading(isLoading) {
 }
 
 // Section management
+// Section management with authentication
 function showSection(id) {
+  // Define protected sections that require authentication
+  const protectedSections = [
+    'package-section',
+    'waste-type-section',
+    'hazardous-menu-section',
+    'hazardous-form-section',
+    'hazardous-history-section',
+    'solid-menu-section',
+    'solid-form-section',
+    'solid-history-section',
+    'admin-dashboard',
+    'user-management-section',
+    'request-logs-section'
+  ];
+  
+  // Check if section requires authentication
+  if (protectedSections.includes(id)) {
+    const token = localStorage.getItem('userToken');
+    
+    // No token or expired token
+    if (!token || isTokenExpired()) {
+      console.log(`🚫 Blocked access to ${id} - no valid token`);
+      handleSessionExpired();
+      return;
+    }
+    
+    // Check admin-only sections
+    const adminSections = [
+      'admin-dashboard',
+      'user-management-section',
+      'request-logs-section'
+    ];
+    
+    if (adminSections.includes(id)) {
+      const role = localStorage.getItem('userRole');
+      
+      if (role !== 'admin') {
+        console.log(`🚫 Blocked access to ${id} - not admin`);
+        showToast('Admin access required', 'error');
+        showSection('package-section');
+        return;
+      }
+    }
+  }
+  
+  // Original code - show the section
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   
@@ -479,7 +695,7 @@ function showAdmin() {
 
 async function loadUsers() {
   try {
-    const res = await fetch(`${scriptURL}?action=getUsers&token=${localStorage.getItem("userToken")}`);
+    const res = await authenticatedFetch(`${scriptURL}?action=getUsers`);
     const users = await res.json();
     renderUsers(users);
   } catch (e) {
@@ -577,17 +793,25 @@ function applyDropdownStyling() {
 async function approveUser(email) {
   if (!confirm("Approve this user?")) return;
 
-  await fetch(`${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
-  loadUsers();
-  showToast("User approved", "success");
+  try {
+    await authenticatedFetch(`${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}`);
+    loadUsers();
+    showToast("User approved", "success");
+  } catch (e) {
+    showToast("Failed to approve user", "error");
+  }
 }
 
 async function rejectUser(email) {
   if (!confirm("Reject this user?")) return;
 
-  await fetch(`${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`);
-  loadUsers();
-  showToast("User rejected", "success");
+  try {
+    await authenticatedFetch(`${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}`);
+    loadUsers();
+    showToast("User rejected", "success");
+  } catch (e) {
+    showToast("Failed to reject user", "error");
+  }
 }
 
 // Quick approve (for pending users)
@@ -608,16 +832,15 @@ async function updateUserStatus(email, status) {
     const action = status === 'Approved' ? 'approveUser' : 
                    status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
     
-    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}&token=${localStorage.getItem("userToken")}`;
+    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
     
-    // Show loading state
     const select = event?.target;
     if (select) {
       select.classList.add('loading');
       select.disabled = true;
     }
     
-    const res = await fetch(url);
+    const res = await authenticatedFetch(url);
     const data = await res.json();
     
     if (select) {
@@ -630,12 +853,12 @@ async function updateUserStatus(email, status) {
       loadUsers();
     } else {
       showToast(data.message || "Failed to update status", "error");
-      loadUsers(); // Reload to reset dropdown
+      loadUsers();
     }
   } catch (err) {
     console.error(err);
     showToast("Error updating user status", "error");
-    loadUsers(); // Reload to reset dropdown
+    loadUsers();
   }
 }
 
@@ -645,16 +868,15 @@ async function updateUserRole(email, role) {
   try {
     console.log('Updating role:', email, role);
     
-    const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}&token=${localStorage.getItem("userToken")}`;
+    const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}`;
     
-    // Show loading state
     const select = event?.target;
     if (select) {
       select.classList.add('loading');
       select.disabled = true;
     }
     
-    const res = await fetch(url);
+    const res = await authenticatedFetch(url);
     const data = await res.json();
     
     if (select) {
@@ -667,12 +889,12 @@ async function updateUserRole(email, role) {
       loadUsers();
     } else {
       showToast(data.message || "Failed to update role", "error");
-      loadUsers(); // Reload to reset dropdown
+      loadUsers();
     }
   } catch (err) {
     console.error(err);
     showToast("Error updating user role: " + err.message, "error");
-    loadUsers(); // Reload to reset dropdown
+    loadUsers();
   }
 }
 
@@ -683,8 +905,8 @@ async function deleteUser(email) {
   }
   
   try {
-    const url = `${scriptURL}?action=deleteUser&email=${encodeURIComponent(email)}&token=${localStorage.getItem("userToken")}`;
-    const res = await fetch(url);
+    const url = `${scriptURL}?action=deleteUser&email=${encodeURIComponent(email)}`;
+    const res = await authenticatedFetch(url);
     const data = await res.json();
     
     if (data.success || data.status === 'success') {
@@ -700,9 +922,13 @@ async function deleteUser(email) {
 }
 
 async function loadRequests() {
-  const res = await fetch(`${scriptURL}?action=getRequests&token=${localStorage.getItem("userToken")}`);
-  const requests = await res.json();
-  renderRequests(requests);
+  try {
+    const res = await authenticatedFetch(`${scriptURL}?action=getRequests`);
+    const requests = await res.json();
+    renderRequests(requests);
+  } catch (e) {
+    showToast("Failed to load request logs", "error");
+  }
 }
 
 function renderRequests(requests) {
@@ -988,7 +1214,7 @@ async function addHazardousEntry() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    const res = await fetch(scriptURL, {
+    const res = await authenticatedFetch(scriptURL, {
       method: 'POST',
       body: JSON.stringify(payload),
       signal: controller.signal
@@ -1204,12 +1430,12 @@ async function addSolidEntry() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    const res = await fetch(scriptURL, {
+    const res = await authenticatedFetch(scriptURL, {
       method: 'POST',
       body: JSON.stringify(payload),
       signal: controller.signal
     });
-
+    
     clearTimeout(timeoutId);
     const data = await res.json();
 
@@ -1317,7 +1543,7 @@ async function addSolidEntry() {
   
 // Load history
 async function loadHistory(type) {
-  const prefix = type; // 'hazardous' or 'solid'
+  const prefix = type;
   
   const from = document.getElementById(`${prefix}-fromDate`).value;
   const to = document.getElementById(`${prefix}-toDate`).value;
@@ -1345,10 +1571,10 @@ async function loadHistory(type) {
   document.getElementById(`${prefix}-table-container`).style.display = 'none';
   document.getElementById(`${prefix}-empty-state`).style.display = 'none';
 
-  const url = `${scriptURL}?package=${selectedPackage}&wasteType=${type}&from=${from}&to=${to}&token=${localStorage.getItem("userToken")}`;
+  const url = `${scriptURL}?package=${selectedPackage}&wasteType=${type}&from=${from}&to=${to}`;
 
   try {
-    const res = await fetch(url);
+    const res = await authenticatedFetch(url);
     const rows = await res.json();
     
     // Store for export
@@ -1385,7 +1611,7 @@ async function loadHistory(type) {
       });
 
       let imageUrl = "";
-      const photoCol = 5; // Photo is at index 5 for both hazardous and solid waste
+      const photoCol = 5;
       
       if (r[photoCol]) {
         const match = r[photoCol].match(/\/d\/([^/]+)/);
@@ -1411,7 +1637,6 @@ async function loadHistory(type) {
           <td>${photoLink}</td>
         `;
       } else {
-        // Solid waste: Date, Location, Waste, User, Photo
         tr.innerHTML = `
           <td>${date}</td>
           <td>${r[1]}</td>
@@ -1594,12 +1819,51 @@ async function logout() {
   try {
     // Call server logout to invalidate token
     if (token) {
-      await fetch(`${scriptURL}?action=logout&token=${token}`);
+      try {
+        await authenticatedFetch(`${scriptURL}?action=logout`);
+      } catch (e) {
+        // Ignore errors during logout
+      }
     }
   } catch (err) {
     console.error('Logout error:', err);
     // Continue with local logout even if server call fails
   }
+  
+  // Clear ALL localStorage data
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('tokenExpiry');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('completedSubmissions');
+  
+  // Reset UI
+  document.body.classList.remove('is-admin');
+  const userInfo = document.getElementById('user-info');
+  if (userInfo) userInfo.style.display = 'none';
+  
+  // Stop session monitoring
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer);
+    sessionCheckTimer = null;
+  }
+  
+  // Stop token refresh timer
+  stopTokenRefreshTimer();
+  
+  // Sign out from Google
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+  
+  // Show login screen
+  showSection('login-section');
+  
+  // Reload page after short delay to fully reset Google Sign-In
+  setTimeout(() => {
+    location.reload();
+  }, 500);
+}
   
   // Clear ALL localStorage data
   localStorage.removeItem('userToken');
@@ -1618,6 +1882,9 @@ async function logout() {
     clearInterval(sessionCheckTimer);
     sessionCheckTimer = null;
   }
+  
+  // ✨ NEW: Stop token refresh timer
+  stopTokenRefreshTimer();
   
   // Sign out from Google
   if (window.google && google.accounts && google.accounts.id) {
