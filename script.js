@@ -1898,7 +1898,7 @@ async function logout() {
   setTimeout(() => {
     location.reload();
   }, 500);
-}
+
 
 // Google login handler - UPDATED
 async function handleCredentialResponse(response) {
