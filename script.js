@@ -115,8 +115,7 @@ async function authenticatedFetch(url, options = {}) {
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbzJf6xUQfHcZBatORUhf48S1966cf4HAsqCuWjR1HccG9gCvTk2onUtVLF7rO44V-Kf/exec";
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
 // Stable V4 - const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -578,7 +577,7 @@ function showSection(id) {
     if (adminSections.includes(id)) {
       const role = localStorage.getItem('userRole');
       
-      if (role !== 'admin') {
+      if (role !== 'admin' && role !== 'super_admin') {
         console.log(`🚫 Blocked access to ${id} - not admin`);
         showToast('Admin access required', 'error');
         showSection('package-section');
@@ -719,14 +718,32 @@ function renderUsers(users) {
     return;
   }
 
-  users.forEach(u => {
+  // Get current user's email and role
+  const currentUserEmail = localStorage.getItem("userEmail");
+  const currentUserRole = localStorage.getItem("userRole");
+  const isSuperAdmin = currentUserRole === "super_admin";
+  const isRegularAdmin = currentUserRole === "admin";
+
+  // Filter users based on role permissions
+  let filteredUsers = users;
+  if (isRegularAdmin && !isSuperAdmin) {
+    // Regular admins can only see pending users and other admins
+    filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin');
+  }
+  // Super admins can see everyone (no filter)
+
+  filteredUsers.forEach(u => {
     const tr = document.createElement("tr");
     
-    // Status dropdown
+    const isCurrentUser = u.email.toLowerCase() === currentUserEmail.toLowerCase();
+    
+    // Status dropdown - disabled for regular admins on non-pending users
+    const canEditStatus = isSuperAdmin || (isRegularAdmin && u.status === 'Pending');
     const statusOptions = ['Pending', 'Approved', 'Rejected'];
     const statusSelect = `
       <select class="admin-select status-select" 
               value="${u.status}"
+              ${canEditStatus ? '' : 'disabled'}
               onchange="updateUserStatus('${u.email}', this.value)">
         ${statusOptions.map(opt => 
           `<option value="${opt}" ${u.status === opt ? 'selected' : ''}>${opt}</option>`
@@ -734,36 +751,45 @@ function renderUsers(users) {
       </select>
     `;
     
-    // Role dropdown
-    const roleOptions = ['user', 'admin'];
+    // Role dropdown - only super_admin can change roles, and users can't change their own role
+    const canEditRole = isSuperAdmin && !isCurrentUser;
+    const roleOptions = isSuperAdmin ? ['user', 'admin', 'super_admin'] : ['user', 'admin'];
     const roleSelect = `
       <select class="admin-select role-select" 
               value="${u.role || 'user'}"
+              ${canEditRole ? '' : 'disabled'}
               onchange="updateUserRole('${u.email}', this.value)">
-        ${roleOptions.map(opt => 
-          `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
-        ).join('')}
+        ${roleOptions.map(opt => {
+          const optLabel = opt === 'super_admin' ? 'Super Admin' : opt.charAt(0).toUpperCase() + opt.slice(1);
+          return `<option value="${opt}" ${(u.role || 'user') === opt ? 'selected' : ''}>${optLabel}</option>`;
+        }).join('')}
       </select>
     `;
     
-    // Action buttons
-    const actions = u.status === 'Pending' 
-      ? `
+    // Action buttons - regular admins can only approve/reject pending users
+    let actions = '';
+    if (u.status === 'Pending' && canEditStatus) {
+      actions = `
         <button class="btn-action btn-approve" onclick="quickApprove('${u.email}')">
           ✓ Approve
         </button>
         <button class="btn-action btn-reject" onclick="quickReject('${u.email}')">
           ✗ Reject
         </button>
-      `
-      : `
+      `;
+    } else if (isSuperAdmin && !isCurrentUser) {
+      // Only super admin can delete users (except themselves)
+      actions = `
         <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">
           🗑️ Delete
         </button>
       `;
+    } else {
+      actions = `<span style="color: #999; font-size: 0.85rem;">—</span>`;
+    }
     
     tr.innerHTML = `
-      <td style="text-align: left;">${u.email}</td>
+      <td style="text-align: left;">${u.email}${isCurrentUser ? ' <span style="color: #999; font-size: 0.75rem;">(You)</span>' : ''}</td>
       <td>${statusSelect}</td>
       <td>${roleSelect}</td>
       <td class="action-cell">${actions}</td>
@@ -1738,10 +1764,21 @@ function displayUserInfo(name, role) {
   
   if (userInfo && userName && roleBadge) {
     userName.textContent = name;
-    roleBadge.textContent = role;
     
-    if (role === 'admin') {
-      roleBadge.classList.add('admin');
+    // Set role badge text and styling
+    if (role === 'super_admin') {
+      roleBadge.textContent = 'SUPER ADMIN';
+      roleBadge.className = 'role-badge super_admin';
+    } else if (role === 'admin') {
+      roleBadge.textContent = 'ADMIN';
+      roleBadge.className = 'role-badge admin';
+    } else {
+      roleBadge.textContent = 'USER';
+      roleBadge.className = 'role-badge';
+    }
+    
+    // Show mode toggle for admins and super admins
+    if (role === 'admin' || role === 'super_admin') {
       // Show mode toggle for admins
       if (modeToggle) {
         modeToggle.style.display = 'flex';
@@ -1889,6 +1926,10 @@ async function handleCredentialResponse(response) {
       localStorage.setItem("userEmail", email);
       localStorage.setItem("tokenExpiry", data.tokenExpiry);
       
+      console.log("✅ Login successful");
+      console.log("User role:", data.role);
+      console.log("Token expiry:", new Date(data.tokenExpiry));
+      
       // Calculate days until expiry
       const daysUntilExpiry = Math.floor((data.tokenExpiry - Date.now()) / (1000 * 60 * 60 * 24));
 
@@ -1899,8 +1940,11 @@ async function handleCredentialResponse(response) {
       // Start session monitoring
       startSessionMonitoring();
       
-      if (data.role === "admin") {
+      if (data.role === "admin" || data.role === "super_admin") {
+        console.log("🔑 Enabling admin UI for role:", data.role);
         enableAdminUI();
+      } else {
+        console.log("👤 User role - no admin access");
       }
     } else if (data.status === "Rejected") {
       showToast("Access denied by admin", "error");
@@ -1948,7 +1992,7 @@ window.onload = async function() {
       displayUserInfo(userName, userRole || 'user');
       showSection('package-section');
       
-      if (userRole === 'admin') {
+      if (userRole === 'admin' || userRole === 'super_admin') {
         enableAdminUI();
       }
       
@@ -2015,7 +2059,16 @@ function closeImageModal() {
 
 function enableAdminUI() {
   document.body.classList.add("is-admin");
-  console.log("Admin mode enabled");
+  
+  // Also show the mode toggle
+  const modeToggle = document.getElementById('mode-toggle');
+  if (modeToggle) {
+    modeToggle.style.display = 'flex';
+  }
+  
+  console.log("✅ Admin mode enabled - is-admin class added");
+  console.log("Body classes:", document.body.className);
+  console.log("Admin sections should now be visible");
 }
 
   //additional js
