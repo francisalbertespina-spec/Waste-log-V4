@@ -240,18 +240,18 @@ input:checked + .toggle-slider:hover {
 }
 
 /* Admin-only visibility control */
+/* Hide all admin-only elements by default */
 .admin-only {
   display: none !important;
 }
 
-body.is-admin .admin-only {
-  display: block !important;
-}
-
-body.is-admin .admin-only.mode-toggle {
+/* Only show the mode toggle when user has admin role */
+body.is-admin .mode-toggle.admin-only {
   display: flex !important;
 }
 
+/* Admin sections should ONLY show when they have .active class */
+/* This prevents them from appearing when just scrolling */
 body.is-admin .section.admin-only.active {
   display: block !important;
 }
