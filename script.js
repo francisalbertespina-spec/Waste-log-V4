@@ -24,9 +24,6 @@ const FINGERPRINT_LOCK_DURATION = 120000; // 2 minutes lock - prevents ANY resub
 async function authenticatedFetch(url, options = {}) {
   const token = localStorage.getItem('userToken');
   
-  console.log('🔐 authenticatedFetch called');
-  console.log('URL:', url);
-  
   // If no token and not a login request, fail immediately
   if (!token && !url.includes('email=')) {
     console.log('❌ No token available');
@@ -38,7 +35,6 @@ async function authenticatedFetch(url, options = {}) {
   if (token && !url.includes('token=') && !url.includes('email=')) {
     const separator = url.includes('?') ? '&' : '?';
     url = `${url}${separator}token=${token}`;
-    console.log('✅ Token added to URL');
   }
   
   // Add token to POST body if applicable
@@ -55,9 +51,7 @@ async function authenticatedFetch(url, options = {}) {
   }
   
   try {
-    console.log('📡 Making fetch request...');
     const response = await fetch(url, options);
-    console.log('📡 Response received, status:', response.status);
     
     // Handle 401 Unauthorized
     if (response.status === 401) {
@@ -80,18 +74,8 @@ async function authenticatedFetch(url, options = {}) {
     // Handle 403 Forbidden (e.g., not admin)
     if (response.status === 403) {
       console.log('🚫 403 Forbidden - insufficient permissions');
-      
-      // Try to get the actual error message from backend
-      try {
-        const data = await response.json();
-        console.log('403 Response data:', data);
-        const errorMsg = data.message || 'You do not have permission to perform this action';
-        showToast(errorMsg, 'error');
-        throw new Error(errorMsg);
-      } catch (e) {
-        showToast('You do not have permission to perform this action', 'error');
-        throw new Error('Forbidden');
-      }
+      showToast('You do not have permission to perform this action', 'error');
+      throw new Error('Forbidden');
     }
     
     // Handle 429 Rate Limit
@@ -108,12 +92,9 @@ async function authenticatedFetch(url, options = {}) {
       throw new Error('Server error');
     }
     
-    console.log('✅ Request successful');
     return response;
     
   } catch (error) {
-    console.log('❌ Error in authenticatedFetch:', error.message);
-    
     // Re-throw specific errors
     if (['Unauthorized', 'Forbidden', 'Rate limit exceeded', 'Server error'].includes(error.message)) {
       throw error;
@@ -134,7 +115,8 @@ async function authenticatedFetch(url, options = {}) {
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbwu2SKwJ0XZsMjFUyI8AumT0BLqTpnQSll2z-PaRg7jTPdrmaRjrizlWePb1E7qZNar/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbz34e5qq-anNzGEhy0ZAVEtubBufD3JRgmTsaYgbpTe40xd5Sc5uwAhoogzxObjeav4/exec";
+// const scriptURL = "https://script.google.com/macros/s/AKfycbyL27Vko3QfF9ENnRUxPAyN1y00Jv-W6VTuverYEVBleLm9pLCCn8V6r00MZK1wMUUe/exec";
 // const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
 // Stable V4 - const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
 
@@ -715,40 +697,19 @@ function showAdmin() {
 
 async function loadUsers() {
   try {
-    console.log('📋 loadUsers: Starting...');
     const res = await authenticatedFetch(`${scriptURL}?action=getUsers`);
-    console.log('📋 loadUsers: Fetch successful, parsing JSON...');
     const users = await res.json();
-    console.log('📋 loadUsers: Received users:', users);
-    console.log('📋 loadUsers: Number of users:', users.length);
     renderUsers(users);
-    console.log('📋 loadUsers: Rendering complete');
   } catch (e) {
-    console.error('💥 loadUsers ERROR:', e);
-    console.error('Error message:', e.message);
-    console.error('Error stack:', e.stack);
-    showToast("Failed to load users: " + e.message, "error");
+    showToast("Failed to load users", "error");
   }
 }
 
 function renderUsers(users) {
-  console.log('🎨 renderUsers: Starting...');
-  console.log('🎨 renderUsers: Received users:', users);
-  console.log('🎨 renderUsers: Type of users:', typeof users);
-  console.log('🎨 renderUsers: Is array?', Array.isArray(users));
-  
   const tbody = document.getElementById("usersTableBody");
-  
-  if (!tbody) {
-    console.error('❌ renderUsers: usersTableBody element not found!');
-    return;
-  }
-  
   tbody.innerHTML = "";
 
-  // Handle if users is not an array or is empty
-  if (!users || !Array.isArray(users) || users.length === 0) {
-    console.log('⚠️ renderUsers: No users to display or invalid data');
+  if (!users || users.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
@@ -764,40 +725,16 @@ function renderUsers(users) {
   const currentUserRole = localStorage.getItem("userRole");
   const isSuperAdmin = currentUserRole === "super_admin";
   const isRegularAdmin = currentUserRole === "admin";
-  
-  console.log('🎨 Current user:', currentUserEmail);
-  console.log('🎨 Current role:', currentUserRole);
-  console.log('🎨 Is super admin:', isSuperAdmin);
 
   // Filter users based on role permissions
   let filteredUsers = users;
   if (isRegularAdmin && !isSuperAdmin) {
     // Regular admins can only see pending users and other admins
-    filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin' || u.role === 'super_admin');
-    console.log('🎨 Filtered for regular admin, showing', filteredUsers.length, 'users');
-  } else {
-    console.log('🎨 Super admin - showing all', users.length, 'users');
-  }
-  
-  console.log('🎨 Filtered users:', filteredUsers);
-  console.log('🎨 Filtered users is array?', Array.isArray(filteredUsers));
-  
-  // Double-check that filteredUsers is an array before forEach
-  if (!Array.isArray(filteredUsers)) {
-    console.error('❌ filteredUsers is not an array!');
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align: center; padding: 20px; color: #f44336;">
-          Error: Invalid data format received
-        </td>
-      </tr>
-    `;
-    return;
+    filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin');
   }
   // Super admins can see everyone (no filter)
 
-  filteredUsers.forEach((u, index) => {
-    console.log(`🎨 Rendering user ${index + 1}:`, u.email);
+  filteredUsers.forEach(u => {
     const tr = document.createElement("tr");
     
     const isCurrentUser = u.email.toLowerCase() === currentUserEmail.toLowerCase();
@@ -919,59 +856,37 @@ async function quickReject(email) {
 // Update user status
 async function updateUserStatus(email, status) {
   try {
-    console.log('=== updateUserStatus START ===');
-    console.log('Email:', email);
-    console.log('Status:', status);
+    console.log('Updating status:', email, status);
     
     const action = status === 'Approved' ? 'approveUser' : 
                    status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
     
-    console.log('Action:', action);
-    
     const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
-    console.log('URL:', url);
     
     const select = event?.target;
     if (select) {
-      console.log('Setting select to loading...');
       select.classList.add('loading');
       select.disabled = true;
     }
     
-    console.log('About to call authenticatedFetch...');
     const res = await authenticatedFetch(url);
-    console.log('authenticatedFetch completed, status:', res.status);
-    
-    console.log('Parsing JSON...');
     const data = await res.json();
-    console.log('Backend response:', JSON.stringify(data));
     
     if (select) {
-      console.log('Removing loading state...');
       select.classList.remove('loading');
       select.disabled = false;
     }
     
-    // Check if the update was successful
-    console.log('Checking success... data.success =', data.success);
-    if (data.success === true) {
-      console.log('✅ SUCCESS - Showing toast and reloading users');
-      showToast(`User ${status.toLowerCase()} successfully`, "success");
+    if (data.success || data.status === 'success') {
+      showToast(`User status updated to ${status}`, "success");
       loadUsers();
     } else {
-      // Show the specific error message from backend
-      const errorMsg = data.message || "Failed to update status";
-      console.log('❌ FAILED - Error message:', errorMsg);
-      showToast(errorMsg, "error");
+      showToast(data.message || "Failed to update status", "error");
       loadUsers();
     }
-    console.log('=== updateUserStatus END ===');
   } catch (err) {
-    console.log('💥 EXCEPTION CAUGHT');
-    console.error('Error type:', err.name);
-    console.error('Error message:', err.message);
-    console.error('Full error:', err);
-    showToast("Error updating user status: " + err.message, "error");
+    console.error(err);
+    showToast("Error updating user status", "error");
     loadUsers();
   }
 }
