@@ -733,6 +733,8 @@ async function loadUsers() {
 function renderUsers(users) {
   console.log('🎨 renderUsers: Starting...');
   console.log('🎨 renderUsers: Received users:', users);
+  console.log('🎨 renderUsers: Type of users:', typeof users);
+  console.log('🎨 renderUsers: Is array?', Array.isArray(users));
   
   const tbody = document.getElementById("usersTableBody");
   
@@ -743,8 +745,9 @@ function renderUsers(users) {
   
   tbody.innerHTML = "";
 
-  if (!users || users.length === 0) {
-    console.log('⚠️ renderUsers: No users to display');
+  // Handle if users is not an array or is empty
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    console.log('⚠️ renderUsers: No users to display or invalid data');
     tbody.innerHTML = `
       <tr>
         <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
@@ -769,14 +772,31 @@ function renderUsers(users) {
   let filteredUsers = users;
   if (isRegularAdmin && !isSuperAdmin) {
     // Regular admins can only see pending users and other admins
-    filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin');
+    filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin' || u.role === 'super_admin');
     console.log('🎨 Filtered for regular admin, showing', filteredUsers.length, 'users');
   } else {
     console.log('🎨 Super admin - showing all', users.length, 'users');
   }
+  
+  console.log('🎨 Filtered users:', filteredUsers);
+  console.log('🎨 Filtered users is array?', Array.isArray(filteredUsers));
+  
+  // Double-check that filteredUsers is an array before forEach
+  if (!Array.isArray(filteredUsers)) {
+    console.error('❌ filteredUsers is not an array!');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 20px; color: #f44336;">
+          Error: Invalid data format received
+        </td>
+      </tr>
+    `;
+    return;
+  }
   // Super admins can see everyone (no filter)
 
-  filteredUsers.forEach(u => {
+  filteredUsers.forEach((u, index) => {
+    console.log(`🎨 Rendering user ${index + 1}:`, u.email);
     const tr = document.createElement("tr");
     
     const isCurrentUser = u.email.toLowerCase() === currentUserEmail.toLowerCase();
