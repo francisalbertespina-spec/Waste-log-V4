@@ -714,19 +714,37 @@ function showAdmin() {
 
 async function loadUsers() {
   try {
+    console.log('📋 loadUsers: Starting...');
     const res = await authenticatedFetch(`${scriptURL}?action=getUsers`);
+    console.log('📋 loadUsers: Fetch successful, parsing JSON...');
     const users = await res.json();
+    console.log('📋 loadUsers: Received users:', users);
+    console.log('📋 loadUsers: Number of users:', users.length);
     renderUsers(users);
+    console.log('📋 loadUsers: Rendering complete');
   } catch (e) {
-    showToast("Failed to load users", "error");
+    console.error('💥 loadUsers ERROR:', e);
+    console.error('Error message:', e.message);
+    console.error('Error stack:', e.stack);
+    showToast("Failed to load users: " + e.message, "error");
   }
 }
 
 function renderUsers(users) {
+  console.log('🎨 renderUsers: Starting...');
+  console.log('🎨 renderUsers: Received users:', users);
+  
   const tbody = document.getElementById("usersTableBody");
+  
+  if (!tbody) {
+    console.error('❌ renderUsers: usersTableBody element not found!');
+    return;
+  }
+  
   tbody.innerHTML = "";
 
   if (!users || users.length === 0) {
+    console.log('⚠️ renderUsers: No users to display');
     tbody.innerHTML = `
       <tr>
         <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
@@ -742,12 +760,19 @@ function renderUsers(users) {
   const currentUserRole = localStorage.getItem("userRole");
   const isSuperAdmin = currentUserRole === "super_admin";
   const isRegularAdmin = currentUserRole === "admin";
+  
+  console.log('🎨 Current user:', currentUserEmail);
+  console.log('🎨 Current role:', currentUserRole);
+  console.log('🎨 Is super admin:', isSuperAdmin);
 
   // Filter users based on role permissions
   let filteredUsers = users;
   if (isRegularAdmin && !isSuperAdmin) {
     // Regular admins can only see pending users and other admins
     filteredUsers = users.filter(u => u.status === 'Pending' || u.role === 'admin');
+    console.log('🎨 Filtered for regular admin, showing', filteredUsers.length, 'users');
+  } else {
+    console.log('🎨 Super admin - showing all', users.length, 'users');
   }
   // Super admins can see everyone (no filter)
 
