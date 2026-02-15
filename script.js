@@ -24,6 +24,9 @@ const FINGERPRINT_LOCK_DURATION = 120000; // 2 minutes lock - prevents ANY resub
 async function authenticatedFetch(url, options = {}) {
   const token = localStorage.getItem('userToken');
   
+  console.log('🔐 authenticatedFetch called');
+  console.log('URL:', url);
+  
   // If no token and not a login request, fail immediately
   if (!token && !url.includes('email=')) {
     console.log('❌ No token available');
@@ -35,6 +38,7 @@ async function authenticatedFetch(url, options = {}) {
   if (token && !url.includes('token=') && !url.includes('email=')) {
     const separator = url.includes('?') ? '&' : '?';
     url = `${url}${separator}token=${token}`;
+    console.log('✅ Token added to URL');
   }
   
   // Add token to POST body if applicable
@@ -51,7 +55,9 @@ async function authenticatedFetch(url, options = {}) {
   }
   
   try {
+    console.log('📡 Making fetch request...');
     const response = await fetch(url, options);
+    console.log('📡 Response received, status:', response.status);
     
     // Handle 401 Unauthorized
     if (response.status === 401) {
@@ -74,8 +80,18 @@ async function authenticatedFetch(url, options = {}) {
     // Handle 403 Forbidden (e.g., not admin)
     if (response.status === 403) {
       console.log('🚫 403 Forbidden - insufficient permissions');
-      showToast('You do not have permission to perform this action', 'error');
-      throw new Error('Forbidden');
+      
+      // Try to get the actual error message from backend
+      try {
+        const data = await response.json();
+        console.log('403 Response data:', data);
+        const errorMsg = data.message || 'You do not have permission to perform this action';
+        showToast(errorMsg, 'error');
+        throw new Error(errorMsg);
+      } catch (e) {
+        showToast('You do not have permission to perform this action', 'error');
+        throw new Error('Forbidden');
+      }
     }
     
     // Handle 429 Rate Limit
@@ -92,9 +108,12 @@ async function authenticatedFetch(url, options = {}) {
       throw new Error('Server error');
     }
     
+    console.log('✅ Request successful');
     return response;
     
   } catch (error) {
+    console.log('❌ Error in authenticatedFetch:', error.message);
+    
     // Re-throw specific errors
     if (['Unauthorized', 'Forbidden', 'Rate limit exceeded', 'Server error'].includes(error.message)) {
       throw error;
@@ -115,9 +134,7 @@ async function authenticatedFetch(url, options = {}) {
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbz34e5qq-anNzGEhy0ZAVEtubBufD3JRgmTsaYgbpTe40xd5Sc5uwAhoogzxObjeav4/exec";
-// const scriptURL = "https://script.google.com/macros/s/AKfycbyL27Vko3QfF9ENnRUxPAyN1y00Jv-W6VTuverYEVBleLm9pLCCn8V6r00MZK1wMUUe/exec";
-// const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
 // Stable V4 - const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -856,37 +873,59 @@ async function quickReject(email) {
 // Update user status
 async function updateUserStatus(email, status) {
   try {
-    console.log('Updating status:', email, status);
+    console.log('=== updateUserStatus START ===');
+    console.log('Email:', email);
+    console.log('Status:', status);
     
     const action = status === 'Approved' ? 'approveUser' : 
                    status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
     
+    console.log('Action:', action);
+    
     const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
+    console.log('URL:', url);
     
     const select = event?.target;
     if (select) {
+      console.log('Setting select to loading...');
       select.classList.add('loading');
       select.disabled = true;
     }
     
+    console.log('About to call authenticatedFetch...');
     const res = await authenticatedFetch(url);
+    console.log('authenticatedFetch completed, status:', res.status);
+    
+    console.log('Parsing JSON...');
     const data = await res.json();
+    console.log('Backend response:', JSON.stringify(data));
     
     if (select) {
+      console.log('Removing loading state...');
       select.classList.remove('loading');
       select.disabled = false;
     }
     
-    if (data.success || data.status === 'success') {
-      showToast(`User status updated to ${status}`, "success");
+    // Check if the update was successful
+    console.log('Checking success... data.success =', data.success);
+    if (data.success === true) {
+      console.log('✅ SUCCESS - Showing toast and reloading users');
+      showToast(`User ${status.toLowerCase()} successfully`, "success");
       loadUsers();
     } else {
-      showToast(data.message || "Failed to update status", "error");
+      // Show the specific error message from backend
+      const errorMsg = data.message || "Failed to update status";
+      console.log('❌ FAILED - Error message:', errorMsg);
+      showToast(errorMsg, "error");
       loadUsers();
     }
+    console.log('=== updateUserStatus END ===');
   } catch (err) {
-    console.error(err);
-    showToast("Error updating user status", "error");
+    console.log('💥 EXCEPTION CAUGHT');
+    console.error('Error type:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Full error:', err);
+    showToast("Error updating user status: " + err.message, "error");
     loadUsers();
   }
 }
