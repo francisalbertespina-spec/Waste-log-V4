@@ -845,58 +845,84 @@ async function rejectUser(email) {
 
 // Quick approve (for pending users)
 async function quickApprove(email) {
-  console.log('Approving user:', email);
-  console.log('Token:', localStorage.getItem('userToken'));
+  console.log('=== QUICK APPROVE DEBUG ===');
+  console.log('1. Email:', email);
+  console.log('2. Token:', localStorage.getItem('userToken'));
+  console.log('3. User Role:', localStorage.getItem('userRole'));
+  
   try {
     const url = `${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}`;
+    console.log('4. Request URL:', url);
     
     const res = await authenticatedFetch(url);
+    console.log('5. Response status:', res.status);
+    
     const data = await res.json();
+    console.log('6. Response data:', JSON.stringify(data, null, 2));
     
     if (data.success || data.status === 'success') {
-      showToast(`User ${email} approved successfully`, "success");
-      loadUsers();
+      showToast(`User approved successfully`, "success");
+      await loadUsers();
     } else {
+      console.error('7. Approval failed:', data);
       showToast(data.message || "Failed to approve user", "error");
     }
   } catch (err) {
-    console.error('Approve error:', err);
-    showToast("Error approving user", "error");
+    console.error('8. Approve error:', err);
+    console.error('Error stack:', err.stack);
+    showToast("Error approving user: " + err.message, "error");
   }
 }
 
 // Quick reject (for pending users)
 async function quickReject(email) {
+  console.log('=== QUICK REJECT DEBUG ===');
+  console.log('1. Email:', email);
+  console.log('2. Token:', localStorage.getItem('userToken'));
+  console.log('3. User Role:', localStorage.getItem('userRole'));
+  
   try {
     const url = `${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}`;
+    console.log('4. Request URL:', url);
     
     const res = await authenticatedFetch(url);
+    console.log('5. Response status:', res.status);
+    
     const data = await res.json();
+    console.log('6. Response data:', JSON.stringify(data, null, 2));
     
     if (data.success || data.status === 'success') {
-      showToast(`User ${email} rejected`, "success");
-      loadUsers();
+      showToast(`User rejected`, "success");
+      await loadUsers();
     } else {
+      console.error('7. Rejection failed:', data);
       showToast(data.message || "Failed to reject user", "error");
     }
   } catch (err) {
-    console.error('Reject error:', err);
-    showToast("Error rejecting user", "error");
+    console.error('8. Reject error:', err);
+    console.error('Error stack:', err.stack);
+    showToast("Error rejecting user: " + err.message, "error");
   }
 }
 
 // Update user status
 async function updateUserStatus(email, status) {
+  console.log('=== UPDATE STATUS DEBUG ===');
+  console.log('1. Email:', email);
+  console.log('2. Status:', status);
+  console.log('3. Token:', localStorage.getItem('userToken'));
+  
   try {
-    console.log('Updating status:', email, status);
-    
     const action = status === 'Approved' ? 'approveUser' : 
                    status === 'Rejected' ? 'rejectUser' : 'updateUserStatus';
     
-    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
+    console.log('4. Action:', action);
     
-    // ✅ FIXED: Only access event if it exists
+    const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
+    console.log('5. Request URL:', url);
+    
     const selectElement = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+    console.log('6. Select element found:', !!selectElement);
     
     if (selectElement) {
       selectElement.classList.add('loading');
@@ -904,7 +930,10 @@ async function updateUserStatus(email, status) {
     }
     
     const res = await authenticatedFetch(url);
+    console.log('7. Response status:', res.status);
+    
     const data = await res.json();
+    console.log('8. Response data:', JSON.stringify(data, null, 2));
     
     if (selectElement) {
       selectElement.classList.remove('loading');
@@ -912,29 +941,34 @@ async function updateUserStatus(email, status) {
     }
     
     if (data.success || data.status === 'success') {
-      showToast(`User status updated to ${status}`, "success");
-      loadUsers();
+      showToast(`Status updated to ${status}`, "success");
+      await loadUsers();
     } else {
+      console.error('9. Status update failed:', data);
       showToast(data.message || "Failed to update status", "error");
-      loadUsers();
+      await loadUsers();
     }
   } catch (err) {
-    console.error('Status update error:', err);
-    showToast("Error updating user status", "error");
-    loadUsers();
+    console.error('10. Status update error:', err);
+    console.error('Error stack:', err.stack);
+    showToast("Error: " + err.message, "error");
+    await loadUsers();
   }
 }
 
-
 // Update user role
 async function updateUserRole(email, role) {
+  console.log('=== UPDATE ROLE DEBUG ===');
+  console.log('1. Email:', email);
+  console.log('2. Role:', role);
+  console.log('3. Token:', localStorage.getItem('userToken'));
+  
   try {
-    console.log('Updating role:', email, role);
-    
     const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}`;
+    console.log('4. Request URL:', url);
     
-    // ✅ FIXED: Only access event if it exists
     const selectElement = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+    console.log('5. Select element found:', !!selectElement);
     
     if (selectElement) {
       selectElement.classList.add('loading');
@@ -942,7 +976,10 @@ async function updateUserRole(email, role) {
     }
     
     const res = await authenticatedFetch(url);
+    console.log('6. Response status:', res.status);
+    
     const data = await res.json();
+    console.log('7. Response data:', JSON.stringify(data, null, 2));
     
     if (selectElement) {
       selectElement.classList.remove('loading');
@@ -950,16 +987,18 @@ async function updateUserRole(email, role) {
     }
     
     if (data.success || data.status === 'success') {
-      showToast(`User role updated to ${role}`, "success");
-      loadUsers();
+      showToast(`Role updated to ${role}`, "success");
+      await loadUsers();
     } else {
+      console.error('8. Role update failed:', data);
       showToast(data.message || "Failed to update role", "error");
-      loadUsers();
+      await loadUsers();
     }
   } catch (err) {
-    console.error('Role update error:', err);
-    showToast("Error updating user role: " + err.message, "error");
-    loadUsers();
+    console.error('9. Role update error:', err);
+    console.error('Error stack:', err.stack);
+    showToast("Error: " + err.message, "error");
+    await loadUsers();
   }
 }
 
