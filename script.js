@@ -845,12 +845,42 @@ async function rejectUser(email) {
 
 // Quick approve (for pending users)
 async function quickApprove(email) {
-  await updateUserStatus(email, 'Approved');
+  try {
+    const url = `${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}`;
+    
+    const res = await authenticatedFetch(url);
+    const data = await res.json();
+    
+    if (data.success || data.status === 'success') {
+      showToast(`User ${email} approved successfully`, "success");
+      loadUsers();
+    } else {
+      showToast(data.message || "Failed to approve user", "error");
+    }
+  } catch (err) {
+    console.error('Approve error:', err);
+    showToast("Error approving user", "error");
+  }
 }
 
 // Quick reject (for pending users)
 async function quickReject(email) {
-  await updateUserStatus(email, 'Rejected');
+  try {
+    const url = `${scriptURL}?action=rejectUser&email=${encodeURIComponent(email)}`;
+    
+    const res = await authenticatedFetch(url);
+    const data = await res.json();
+    
+    if (data.success || data.status === 'success') {
+      showToast(`User ${email} rejected`, "success");
+      loadUsers();
+    } else {
+      showToast(data.message || "Failed to reject user", "error");
+    }
+  } catch (err) {
+    console.error('Reject error:', err);
+    showToast("Error rejecting user", "error");
+  }
 }
 
 // Update user status
@@ -863,18 +893,20 @@ async function updateUserStatus(email, status) {
     
     const url = `${scriptURL}?action=${action}&email=${encodeURIComponent(email)}&status=${status}`;
     
-    const select = event?.target;
-    if (select) {
-      select.classList.add('loading');
-      select.disabled = true;
+    // ✅ FIXED: Only access event if it exists
+    const selectElement = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+    
+    if (selectElement) {
+      selectElement.classList.add('loading');
+      selectElement.disabled = true;
     }
     
     const res = await authenticatedFetch(url);
     const data = await res.json();
     
-    if (select) {
-      select.classList.remove('loading');
-      select.disabled = false;
+    if (selectElement) {
+      selectElement.classList.remove('loading');
+      selectElement.disabled = false;
     }
     
     if (data.success || data.status === 'success') {
@@ -885,7 +917,7 @@ async function updateUserStatus(email, status) {
       loadUsers();
     }
   } catch (err) {
-    console.error(err);
+    console.error('Status update error:', err);
     showToast("Error updating user status", "error");
     loadUsers();
   }
@@ -899,18 +931,20 @@ async function updateUserRole(email, role) {
     
     const url = `${scriptURL}?action=updateUserRole&email=${encodeURIComponent(email)}&role=${role}`;
     
-    const select = event?.target;
-    if (select) {
-      select.classList.add('loading');
-      select.disabled = true;
+    // ✅ FIXED: Only access event if it exists
+    const selectElement = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+    
+    if (selectElement) {
+      selectElement.classList.add('loading');
+      selectElement.disabled = true;
     }
     
     const res = await authenticatedFetch(url);
     const data = await res.json();
     
-    if (select) {
-      select.classList.remove('loading');
-      select.disabled = false;
+    if (selectElement) {
+      selectElement.classList.remove('loading');
+      selectElement.disabled = false;
     }
     
     if (data.success || data.status === 'success') {
@@ -921,7 +955,7 @@ async function updateUserRole(email, role) {
       loadUsers();
     }
   } catch (err) {
-    console.error(err);
+    console.error('Role update error:', err);
     showToast("Error updating user role: " + err.message, "error");
     loadUsers();
   }
