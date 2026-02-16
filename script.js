@@ -845,6 +845,8 @@ async function rejectUser(email) {
 
 // Quick approve (for pending users)
 async function quickApprove(email) {
+  console.log('Approving user:', email);
+  console.log('Token:', localStorage.getItem('userToken'));
   try {
     const url = `${scriptURL}?action=approveUser&email=${encodeURIComponent(email)}`;
     
