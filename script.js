@@ -115,7 +115,8 @@ async function authenticatedFetch(url, options = {}) {
 
 const DEV_MODE = false; // Set to false for production
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbxS7wyAfqHKO73Om8h6VCR_M8Pr8FCx79uQP-uQ4PGbb80kyuoNpNjkarWS3UH3_iDy/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbyuJ-4BKFBcUsg1fkvFI5KXhWcMXXM_nE4vafBDdkvDhtMVSTzJnt8tcz-9eIA1iXs/exec";
+// const scriptURL = "https://script.google.com/macros/s/AKfycbxS7wyAfqHKO73Om8h6VCR_M8Pr8FCx79uQP-uQ4PGbb80kyuoNpNjkarWS3UH3_iDy/exec";
 // const scriptURL = "https://script.google.com/macros/s/AKfycbyL27Vko3QfF9ENnRUxPAyN1y00Jv-W6VTuverYEVBleLm9pLCCn8V6r00MZK1wMUUe/exec";
 // const scriptURL = "https://script.google.com/macros/s/AKfycbwOzLtzZtvR2hrJuS6uVPe58GxATwtwwkSJ_yP073vST9B3283AYd7ADG8ApmPuDKJO/exec";
 // Stable V4 - const scriptURL = "https://script.google.com/macros/s/AKfycbxe2nDYZzBT8QCsp_XQa0RaV36c0MMUAYDdrwwGydSs0AbQ1H7RlbGHyE8YSmbhQxk-/exec";
