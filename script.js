@@ -32,10 +32,10 @@ async function authenticatedFetch(url, options = {}) {
   }
   
   // Add token to URL if not already present (for GET requests)
-  if (token && !url.includes('token=') && !url.includes('email=')) {
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}token=${token}`;
-  }
+if (token && !url.includes('token=')) {
+  const separator = url.includes('?') ? '&' : '?';
+  url = `${url}${separator}token=${token}`;
+}
   
   // Add token to POST body if applicable
   if (options.method === 'POST' && options.body) {
